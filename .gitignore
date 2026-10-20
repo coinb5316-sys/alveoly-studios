@@ -1,0 +1,12 @@
+node_modules/
+**/node_modules/
+.env
+**/.env
+**/.env.*
+!**/.env.production
+**/dist/
+**/build/
+*.log
+.DS_Store
+server/output.*
+server/video.mp4
