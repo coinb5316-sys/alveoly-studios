@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -38,12 +38,51 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [slide, setSlide] = useState(0);
 
-  // Refs to avoid re-running effects when parent recreates callbacks
+  // Refs
   const hasProcessedOAuth = useRef(false);
   const onCloseRef = useRef(onClose);
+  const loginRef = useRef(login);
+  const navigateRef = useRef(navigate);
+
+  // Keep refs current without re-triggering effects
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+  useEffect(() => {
+    loginRef.current = login;
+  }, [login]);
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
+
+  // Safe close helper
+  const safeClose = useCallback(() => {
+    if (typeof onCloseRef.current === 'function') {
+      try {
+        onCloseRef.current();
+      } catch (e) {
+        console.error('onClose threw:', e);
+      }
+    }
+  }, []);
+
+  // Safe login helper
+  const safeLogin = useCallback((user, token) => {
+    if (typeof loginRef.current !== 'function') {
+      console.error('login is not a function in AuthModal:', loginRef.current);
+      throw new Error('Authentication service unavailable. Please refresh the page.');
+    }
+    return loginRef.current(user, token);
+  }, []);
+
+  // Safe navigate helper
+  const safeNavigate = useCallback((path, opts) => {
+    if (typeof navigateRef.current !== 'function') {
+      console.error('navigate is not a function in AuthModal:', navigateRef.current);
+      return;
+    }
+    return navigateRef.current(path, opts);
+  }, []);
 
   const slides =
     mode === 'login'
@@ -53,9 +92,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
         : AUTH_ARTWORK.forgot;
 
   // ── Google OAuth redirect handler ──────────────────────────
-  // Runs once per URL. Guarded by a ref so login/navigate are
-  // only invoked a single time, even if React remounts or
-  // parent re-renders. Fixes "t is not a function" crash.
   useEffect(() => {
     if (hasProcessedOAuth.current) return;
 
@@ -78,11 +114,15 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
         credits: Number(credits) || 0,
         role: role || 'user',
       };
-      login(userData, token);
-      onCloseRef.current?.();
-      navigate('/dashboard', { replace: true });
+      try {
+        safeLogin(userData, token);
+        safeClose();
+        safeNavigate('/dashboard', { replace: true });
+      } catch (e) {
+        setError(e.message || 'Google login failed. Please try again.');
+      }
     }
-  }, [searchParams, login, navigate]);
+  }, [searchParams, safeClose, safeLogin, safeNavigate]);
 
   // Auto-advance the slider
   useEffect(() => {
@@ -119,14 +159,14 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     };
   }, []);
 
-  // Close on Escape (register once, use ref for latest onClose)
+  // Close on Escape
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onCloseRef.current?.();
+      if (e.key === 'Escape') safeClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [safeClose]);
 
   const resetMessages = () => {
     setError('');
@@ -168,9 +208,9 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
         throw new Error('The server response was incomplete. Please try again.');
       }
 
-      login(res.data.user, res.data.token);
-      onCloseRef.current?.();
-      navigate('/dashboard');
+      safeLogin(res.data.user, res.data.token);
+      safeClose();
+      safeNavigate('/dashboard');
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -214,7 +254,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const switchToRegister = () => onSwitchMode('register');
   const openForgot = () => onSwitchMode('forgot');
 
-  // Real Google redirect (login + register share the same entry point)
   const handleGoogleClick = () => {
     const apiUrl =
       import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -248,7 +287,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
       aria-modal="true"
       aria-label={heading}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onCloseRef.current?.();
+        if (e.target === e.currentTarget) safeClose();
       }}
     >
       <style>{`
@@ -447,7 +486,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
       <section className="alveoly-modal-panel">
         <button
           type="button"
-          onClick={() => onCloseRef.current?.()}
+          onClick={safeClose}
           aria-label="Close"
           className="alveoly-modal-close"
         >
