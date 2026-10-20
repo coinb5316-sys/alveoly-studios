@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -27,18 +27,23 @@ const AUTH_ARTWORK = {
 const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [searchParams] = useSearchParams(); // NEW: For Google OAuth redirect
+  const [searchParams] = useSearchParams();
 
-  const [step, setStep] = useState('email'); // email | password | forgot-email | forgot-sent
+  const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // ---- carousel state ----
   const [slide, setSlide] = useState(0);
+
+  // Refs to avoid re-running effects when parent recreates callbacks
+  const hasProcessedOAuth = useRef(false);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   const slides =
     mode === 'login'
@@ -47,8 +52,13 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
         ? AUTH_ARTWORK.register
         : AUTH_ARTWORK.forgot;
 
-  // NEW: Catch the Google OAuth redirect
+  // ── Google OAuth redirect handler ──────────────────────────
+  // Runs once per URL. Guarded by a ref so login/navigate are
+  // only invoked a single time, even if React remounts or
+  // parent re-renders. Fixes "t is not a function" crash.
   useEffect(() => {
+    if (hasProcessedOAuth.current) return;
+
     const token = searchParams.get('token');
     const emailParam = searchParams.get('email');
     const credits = searchParams.get('credits');
@@ -56,32 +66,39 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     const errParam = searchParams.get('error');
 
     if (errParam) {
+      hasProcessedOAuth.current = true;
       setError('Google authentication failed. Please try again.');
       return;
     }
 
     if (token && emailParam) {
-      const userData = { email: emailParam, credits: Number(credits), role };
+      hasProcessedOAuth.current = true;
+      const userData = {
+        email: emailParam,
+        credits: Number(credits) || 0,
+        role: role || 'user',
+      };
       login(userData, token);
-      onClose();
+      onCloseRef.current?.();
       navigate('/dashboard', { replace: true });
     }
-  }, [searchParams, login, navigate, onClose]);
+  }, [searchParams, login, navigate]);
 
-  // Auto-advance the slider every 5 seconds
+  // Auto-advance the slider
   useEffect(() => {
+    if (!slides.length) return undefined;
     const timer = setInterval(() => {
       setSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Reset slide when the mode changes
+  // Reset slide on mode change
   useEffect(() => {
     setSlide(0);
   }, [mode]);
 
-  // Reset all form state whenever mode changes
+  // Reset form state on mode change
   useEffect(() => {
     setStep('email');
     setEmail('');
@@ -94,7 +111,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   // Lock page scroll while modal is open
   useEffect(() => {
     const scroller = document.querySelector('.page-scroll');
-    if (!scroller) return;
+    if (!scroller) return undefined;
     const original = scroller.style.overflow;
     scroller.style.overflow = 'hidden';
     return () => {
@@ -102,14 +119,14 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     };
   }, []);
 
-  // Close on Escape key
+  // Close on Escape (register once, use ref for latest onClose)
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current?.();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
 
   const resetMessages = () => {
     setError('');
@@ -142,14 +159,17 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     setLoading(true);
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
-      const res = await api.post(endpoint, { email: email.trim().toLowerCase(), password });
+      const res = await api.post(endpoint, {
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
       if (!res.data?.user || !res.data?.token) {
         throw new Error('The server response was incomplete. Please try again.');
       }
 
       login(res.data.user, res.data.token);
-      onClose();
+      onCloseRef.current?.();
       navigate('/dashboard');
     } catch (err) {
       setError(
@@ -162,7 +182,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     }
   };
 
-  // ---- Forgot password ----
   const handleForgotSubmit = async (event) => {
     event.preventDefault();
     resetMessages();
@@ -195,11 +214,13 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const switchToRegister = () => onSwitchMode('register');
   const openForgot = () => onSwitchMode('forgot');
 
-  // NEW: Real Google Redirect
+  // Real Google redirect (login + register share the same entry point)
   const handleGoogleClick = () => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const baseUrl = apiUrl.replace('/api', '');
-    window.location.href = `${baseUrl}/auth/google`;
+    const apiUrl =
+      import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const baseUrl = apiUrl.replace(/\/api\/?$/, '');
+    const route = mode === 'register' ? '/auth/google/register' : '/auth/google';
+    window.location.assign(`${baseUrl}${route}`);
   };
 
   const heading =
@@ -227,7 +248,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
       aria-modal="true"
       aria-label={heading}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onCloseRef.current?.();
       }}
     >
       <style>{`
@@ -426,7 +447,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
       <section className="alveoly-modal-panel">
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => onCloseRef.current?.()}
           aria-label="Close"
           className="alveoly-modal-close"
         >
@@ -542,6 +563,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
                   }}
                   className="alveoly-modal-input"
                   required
+                  autoFocus
                 />
                 <button type="submit" className="alveoly-modal-primary w-full">
                   Continue
