@@ -35,6 +35,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://alveolystudios.site',
   'https://www.alveolystudios.site',
+    'https://alveoly-client.pages.dev',
   process.env.FRONTEND_URL,
   process.env.CLIENT_URL,
 ].filter(Boolean);
