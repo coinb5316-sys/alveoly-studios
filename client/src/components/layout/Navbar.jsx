@@ -18,11 +18,7 @@ function Brand({ onDark }) {
       }`}
       aria-label="Alveoly Studios home"
     >
-      <img
-        src={logo}
-        alt=""
-        className="h-7 w-7 shrink-0 rounded-lg object-contain"
-      />
+      <img src={logo} alt="" className="h-7 w-7 shrink-0 rounded-lg object-contain" />
       <span className="text-[15.5px] sm:text-[16px]">Alveoly Studios</span>
     </Link>
   );
@@ -32,22 +28,38 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  // "onDark" = the navbar sits over the hero video (top of page, not scrolled)
-  // "solid"  = the navbar sits on the cream page (scrolled, or on any non-landing route)
   const isLanding = location.pathname === '/';
   const solid = scrolled || !isLanding;
   const onDark = !solid;
 
-  // Close mobile menu on route change
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
-
-  // Lock scroll when mobile menu is open
   useEffect(() => {
-    if (!mobileOpen) return;
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [mobileOpen]);
+
+  // Safe openers — fall back to a global event if parent forgot to pass them
+  const safeOpen = (mode, prop) => {
+    if (typeof prop === 'function') return prop();
+    window.dispatchEvent(new CustomEvent('auth:open', { detail: mode }));
+  };
+  const handleLoginClick = () => safeOpen('login', openLogin);
+  const handleRegisterClick = () => safeOpen('register', openRegister);
+  const handleMobileLogin = () => {
+    setMobileOpen(false);
+    handleLoginClick();
+  };
+  const handleMobileRegister = () => {
+    setMobileOpen(false);
+    handleRegisterClick();
+  };
 
   return (
     <header
@@ -60,7 +72,6 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
       <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-5 sm:px-8">
         <Brand onDark={onDark} />
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-1 text-[13px] lg:flex">
           {NAV_LINKS.map(({ to, label }) => (
             <NavLink
@@ -79,11 +90,10 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
           ))}
         </nav>
 
-        {/* Desktop actions */}
         <div className="hidden items-center gap-2 sm:flex">
           <button
             type="button"
-            onClick={openLogin}
+            onClick={handleLoginClick}
             className={`rounded-lg px-3.5 py-2 text-[13px] font-medium transition ${
               onDark
                 ? 'text-white/85 hover:bg-white/10 hover:text-white'
@@ -94,7 +104,7 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
           </button>
           <button
             type="button"
-            onClick={openRegister}
+            onClick={handleRegisterClick}
             className={`rounded-lg px-4 py-2.5 text-[13px] font-semibold transition ${
               onDark
                 ? 'bg-white text-[#1a1a1a] hover:bg-white/90'
@@ -105,16 +115,13 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
           </button>
         </div>
 
-        {/* Mobile toggle */}
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-lg transition sm:hidden ${
-            onDark
-              ? 'text-white hover:bg-white/10'
-              : 'text-[#1a1a1a] hover:bg-black/[0.04]'
+            onDark ? 'text-white hover:bg-white/10' : 'text-[#1a1a1a] hover:bg-black/[0.04]'
           }`}
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -131,7 +138,6 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
         </button>
       </div>
 
-      {/* Mobile menu panel */}
       <div
         className={`sm:hidden overflow-hidden border-t border-black/[0.06] bg-[#fdfbf7] transition-[max-height,opacity] duration-300 ${
           mobileOpen ? 'max-h-[420px] opacity-100' : 'max-h-0 opacity-0'
@@ -158,14 +164,14 @@ export default function Navbar({ scrolled, openLogin, openRegister }) {
           <div className="mt-4 flex flex-col gap-2 border-t border-black/[0.06] pt-4">
             <button
               type="button"
-              onClick={() => { setMobileOpen(false); openLogin(); }}
+              onClick={handleMobileLogin}
               className="rounded-lg border border-black/10 px-4 py-2.5 text-[13px] font-medium text-[#1a1a1a] transition hover:bg-black/[0.04]"
             >
               Log in
             </button>
             <button
               type="button"
-              onClick={() => { setMobileOpen(false); openRegister(); }}
+              onClick={handleMobileRegister}
               className="rounded-lg bg-[#1a1a1a] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#2b2b2b]"
             >
               Sign up free
