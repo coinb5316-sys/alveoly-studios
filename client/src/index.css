@@ -1,0 +1,274 @@
+/* ============================================================
+   src/index.css
+   Reset + base styles. Import AFTER tokens.css.
+   Owns: reset, typography defaults, scrollbar, focus, forms.
+   Does NOT own: color values (those live in tokens.css).
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════ RESET ═══════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Kill default margins that fight Tailwind */
+h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote {
+  margin: 0;
+}
+
+/* ═══════════════ SCROLL LOCK ═══════════════ */
+/* The app shell (Dashboard) is `fixed inset-0` — the page
+   body must NEVER scroll. Each pane manages its own scroll. */
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* #root fills the viewport exactly — no min-height hack, no flex column */
+#root {
+  height: 100%;
+  width: 100%;
+  display: block;
+}
+
+/* Landing page (public routes) needs to scroll.
+   Wrap its content in .page-scroll to re-enable scrolling. */
+.page-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ═══════════════ BASE TYPOGRAPHY ═══════════════ */
+
+body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  font-synthesis: none;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  letter-spacing: -0.005em;
+}
+
+/* Heading defaults */
+h1 { font-size: var(--text-3xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+h2 { font-size: var(--text-2xl); font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; }
+h3 { font-size: var(--text-xl);  font-weight: 600; letter-spacing: -0.01em;  line-height: 1.2; }
+
+p { line-height: 1.6; }
+
+code,
+kbd,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+code {
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+/* ═══════════════ MEDIA ═══════════════ */
+
+img,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+video {
+  object-fit: cover;
+}
+
+/* ═══════════════ FORMS ═══════════════ */
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+input,
+textarea,
+select {
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* ═══════════════ FOCUS RING (single source) ═══════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Remove focus outline for mouse users (pro pattern) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ═══════════════ SCROLLBAR (thin, subtle) ═══════════════ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-4);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--surface-0);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-5);
+  background-clip: padding-box;
+}
+
+/* For scrollable panes where we want a thinner scrollbar */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  background-clip: padding-box;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: padding-box;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-4) transparent;
+}
+
+/* ═══════════════ RANGE INPUT ═══════════════ */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--surface-4);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  border: 2px solid var(--surface-1);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  border: 2px solid var(--surface-1);
+  cursor: pointer;
+}
+
+/* ═══════════════ SELECTION ═══════════════ */
+
+::selection {
+  background: var(--brand-glow);
+  color: var(--text-primary);
+}
+
+/* ═══════════════ ANIMATIONS ═══════════════ */
+
+@keyframes slide {
+  0%   { left: -33%; }
+  100% { left: 100%; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Utility classes for reveal-on-mount */
+.animate-fade-in { animation: fade-in var(--dur-slow) var(--ease-out) both; }
+.animate-fade-up { animation: fade-up var(--dur-slow) var(--ease-out) both; }
+
+/* Stagger delays */
+.delay-75  { animation-delay: 75ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-450 { animation-delay: 450ms; }
+
+/* ═══════════════ REDUCED MOTION ═══════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
