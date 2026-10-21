@@ -14,6 +14,7 @@ import { QueueProvider } from './context/QueueContext';
 import Landing from './pages/Landing';
 import Features from './pages/Features';
 import Pricing from './pages/Pricing';
+import PricingConfirm from './pages/PricingConfirm';
 import FAQ from './pages/FAQ';
 import Showcase from './pages/Showcase';
 import Terms from './pages/Terms';
@@ -28,12 +29,15 @@ import AdminDashboard from './pages/AdminDashboard';
 // Global auth modal
 import AuthModal from './components/AuthModal';
 
+/* ─────────────────────────────────────────────
+   ProtectedRoute — same behavior as before
+   ───────────────────────────────────────────── */
 function ProtectedRoute({ children }) {
   const { ready, isAuthenticated } = useAuth();
 
   if (!ready) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#06060a]">
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0e0d0c]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-[#a78bfa]" />
           <p className="text-[11px] text-white/40">Restoring session…</p>
@@ -49,12 +53,16 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+/* ─────────────────────────────────────────────
+   AuthShell — handles the login/register/forgot modal
+   and preserves the ?redirect= param through login.
+   ───────────────────────────────────────────── */
 function AuthShell({ children }) {
   const [authMode, setAuthMode] = useState(null); // 'login' | 'register' | 'forgot' | null
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Sync modal with URL
+  // Sync modal with the current URL
   useEffect(() => {
     if (location.pathname === '/login') setAuthMode('login');
     else if (location.pathname === '/register') setAuthMode('register');
@@ -62,14 +70,15 @@ function AuthShell({ children }) {
     else setAuthMode(null);
   }, [location.pathname]);
 
-  // Listen for `auth:open` events dispatched from anywhere (Navbar, CTAs, etc.)
+  // Listen for global `auth:open` events (from Navbar, CTAs, etc.)
   useEffect(() => {
     const handler = (e) => {
       const mode = e.detail || 'login';
+      const search = window.location.search; // preserve ?redirect=… if any
       setAuthMode(mode);
-      if (mode === 'login') navigate('/login');
-      else if (mode === 'register') navigate('/register');
-      else if (mode === 'forgot') navigate('/forgot-password');
+      if (mode === 'login') navigate(`/login${search}`);
+      else if (mode === 'register') navigate(`/register${search}`);
+      else if (mode === 'forgot') navigate(`/forgot-password${search}`);
     };
     window.addEventListener('auth:open', handler);
     return () => window.removeEventListener('auth:open', handler);
@@ -77,17 +86,26 @@ function AuthShell({ children }) {
 
   const closeAuth = () => {
     setAuthMode(null);
-    // Only navigate away if we were on one of the auth URLs
+    // Only navigate when we were on an auth route
     if (['/login', '/register', '/forgot-password'].includes(location.pathname)) {
-      navigate('/');
+      // If there's a redirect target, honor it even on close
+      const params = new URLSearchParams(location.search);
+      const redirect = params.get('redirect');
+      if (redirect) {
+        navigate(redirect, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
   };
 
   const switchAuthMode = (nextMode) => {
     setAuthMode(nextMode);
-    if (nextMode === 'login') navigate('/login');
-    else if (nextMode === 'register') navigate('/register');
-    else if (nextMode === 'forgot') navigate('/forgot-password');
+    // Preserve ?redirect=… when switching between login / register / forgot
+    const search = location.search;
+    if (nextMode === 'login') navigate(`/login${search}`);
+    else if (nextMode === 'register') navigate(`/register${search}`);
+    else if (nextMode === 'forgot') navigate(`/forgot-password${search}`);
   };
 
   return (
@@ -104,6 +122,9 @@ function AuthShell({ children }) {
   );
 }
 
+/* ─────────────────────────────────────────────
+   App
+   ───────────────────────────────────────────── */
 function App() {
   return (
     <AuthProvider>
@@ -118,6 +139,7 @@ function App() {
               <Route path="/forgot-password" element={<Landing />} />
               <Route path="/features" element={<Features />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/pricing/confirm" element={<PricingConfirm />} /> {/* NEW */}
               <Route path="/faq" element={<FAQ />} />
               <Route path="/showcase" element={<Showcase />} />
               <Route path="/about" element={<About />} />
