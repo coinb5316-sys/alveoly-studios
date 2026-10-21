@@ -1,3 +1,4 @@
+// controllers/assetController.js
 import https from 'https';
 import http from 'http';
 import jwt from 'jsonwebtoken';
@@ -15,7 +16,6 @@ export const listAssets = async (req, res) => {
   try {
     const { type } = req.query;
 
-    // Parse pagination safely
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(
       MAX_LIMIT,
@@ -23,7 +23,6 @@ export const listAssets = async (req, res) => {
     );
     const skip = (page - 1) * limit;
 
-    // Validate type filter
     const filter = { userId: req.user.id };
     if (type) {
       if (!VALID_TYPES.includes(type)) {
@@ -39,7 +38,8 @@ export const listAssets = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('_id type prompt cloudinaryUrl createdAt')
+        // creditsCost is included so the UI can show a per-asset cost badge
+        .select('_id type prompt cloudinaryUrl creditsCost kind createdAt')
         .lean(),
       Asset.countDocuments(filter),
     ]);
@@ -61,19 +61,35 @@ export const listAssets = async (req, res) => {
 
 /**
  * GET /api/assets/stats
- * Returns counts per type for the current user.
+ * Returns counts and credit totals per type for the current user.
  */
 export const getAssetStats = async (req, res) => {
   try {
     const rows = await Asset.aggregate([
       { $match: { userId: req.user.id } },
-      { $group: { _id: '$type', count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: '$type',
+          count: { $sum: 1 },
+          creditsUsed: { $sum: { $ifNull: ['$creditsCost', 0] } },
+        },
+      },
     ]);
 
-    const stats = { image: 0, video: 0, audio: 0, total: 0 };
+    const stats = {
+      image: { count: 0, creditsUsed: 0 },
+      video: { count: 0, creditsUsed: 0 },
+      audio: { count: 0, creditsUsed: 0 },
+      total: { count: 0, creditsUsed: 0 },
+    };
+
     rows.forEach((r) => {
-      if (VALID_TYPES.includes(r._id)) stats[r._id] = r.count;
-      stats.total += r.count;
+      if (VALID_TYPES.includes(r._id)) {
+        stats[r._id].count = r.count;
+        stats[r._id].creditsUsed = r.creditsUsed || 0;
+        stats.total.count += r.count;
+        stats.total.creditsUsed += r.creditsUsed || 0;
+      }
     });
 
     res.json({ stats });
@@ -138,17 +154,13 @@ export const streamAsset = async (req, res) => {
       asset.cloudinaryUrl,
       { headers: upstreamHeaders },
       (upstream) => {
-        // If we somehow get here after headers were sent, abort
         if (res.headersSent) {
           upstream.destroy();
           return;
         }
 
-        // Forward the status code (200 or 206)
         res.status(upstream.statusCode || 200);
 
-        // Copy only safe headers — NOT content-length (can be wrong for 206),
-        // NOT content-encoding (breaks byte ranges)
         const passthrough = [
           'content-type',
           'content-range',
@@ -161,7 +173,6 @@ export const streamAsset = async (req, res) => {
           if (upstream.headers[h]) res.setHeader(h, upstream.headers[h]);
         }
 
-        // If upstream is 206, it already set Content-Range; browser needs Content-Length
         if (upstream.headers['content-length']) {
           res.setHeader('Content-Length', upstream.headers['content-length']);
         }
@@ -181,7 +192,6 @@ export const streamAsset = async (req, res) => {
       if (!res.headersSent) res.status(502).json({ error: 'Stream failed' });
     });
 
-    // Clean up if the client disconnects mid-stream
     req.on('close', () => {
       if (!upstreamReq.destroyed) upstreamReq.destroy();
     });

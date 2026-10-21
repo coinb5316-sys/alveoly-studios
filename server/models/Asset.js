@@ -1,3 +1,4 @@
+// models/Asset.js
 import mongoose from 'mongoose';
 
 const AssetSchema = new mongoose.Schema(
@@ -33,11 +34,24 @@ const AssetSchema = new mongoose.Schema(
     voice: { type: String, default: '' },
     sourceUrl: { type: String, default: '' },
     extra: { type: mongoose.Schema.Types.Mixed }, // catch-all for future fields
+
+    // ── Credit accounting ──
+    // How many credits were deducted for this generation.
+    // Populated at creation time (see Asset.create(...) callers).
+    // Falls back to 0 if missing so aggregation never crashes.
+    creditsCost: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
+    },
   },
   { timestamps: true }
 );
 
 // Fast lookups for the library + stats
 AssetSchema.index({ userId: 1, type: 1, createdAt: -1 });
+// Fast lookups for admin usage aggregation
+AssetSchema.index({ userId: 1, creditsCost: 1 });
 
 export default mongoose.model('Asset', AssetSchema);

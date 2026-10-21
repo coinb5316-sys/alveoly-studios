@@ -6,7 +6,6 @@ import Transaction from '../models/Transaction.js';
 import Notification from '../models/Notification.js';
 import { getMagicHourAccountBalance } from '../services/magicHourAccount.js';
 
-
 const DEFAULT_PLANS = {
   free: { monthlyUSD: 0, yearlyUSD: 0, credits: 5 },
   pro: { monthlyUSD: 19, yearlyUSD: 15, credits: 500 },
@@ -132,7 +131,6 @@ export const getSettings = async (req, res) => {
       return acc;
     }, {});
 
-    // Guarantee plans key always exists so admin UI can render
     if (!settingsObj.plans) {
       settingsObj.plans = DEFAULT_PLANS;
     }
@@ -157,11 +155,6 @@ export const updateSetting = async (req, res) => {
   }
 };
 
-/**
- * Save the entire `plans` object.
- * Body: { plans: { pro: { monthlyUSD, yearlyUSD, credits }, enterprise: {...} } }
- * Free tier is enforced server-side — admin cannot change it.
- */
 export const savePlans = async (req, res) => {
   try {
     const incoming = req.body?.plans;
@@ -169,12 +162,8 @@ export const savePlans = async (req, res) => {
       return res.status(400).json({ error: 'plans object is required' });
     }
 
-    // Free tier is locked
-    const merged = {
-      free: DEFAULT_PLANS.free,
-    };
+    const merged = { free: DEFAULT_PLANS.free };
 
-    // Validate and merge pro + enterprise
     for (const id of ['pro', 'enterprise']) {
       const p = incoming[id];
       if (!p) continue;
@@ -209,11 +198,6 @@ export const savePlans = async (req, res) => {
   }
 };
 
-/**
- * Reset a plan to its default price.
- * Deleting a paid plan is allowed — it reverts to default, doesn't remove the tier
- * (users still need to be able to subscribe to pro/enterprise).
- */
 export const deletePlanPrice = async (req, res) => {
   try {
     const { id } = req.params;
@@ -224,7 +208,6 @@ export const deletePlanPrice = async (req, res) => {
     const setting = await Setting.findOne({ key: 'plans' });
     const plans = setting?.value || DEFAULT_PLANS;
 
-    // Reset the requested plan to its default
     plans[id] = DEFAULT_PLANS[id];
 
     const updated = await Setting.findOneAndUpdate(
@@ -263,18 +246,15 @@ export const sendNotification = async (req, res) => {
 export const getMagicHourBalance = async (req, res) => {
   try {
     const account = await getMagicHourAccountBalance();
-    
-    // Optional: Add a "low balance" warning threshold
-    const lowBalanceThreshold = 1000; // Example: warn if below 1000 credits
-    
+    const lowBalanceThreshold = 1000;
+
     res.json({
       success: true,
       data: {
         ...account,
         lowBalance: account.credits < lowBalanceThreshold,
         threshold: lowBalanceThreshold,
-        // Estimate value in GHS for admin context (using a fixed rate for now)
-        estimatedValueGHS: Math.round(account.credits * 0.05 * 15), // e.g., 0.05 USD per credit * 15 GHS
+        estimatedValueGHS: Math.round(account.credits * 0.05 * 15),
       },
     });
   } catch (err) {
@@ -283,20 +263,19 @@ export const getMagicHourBalance = async (req, res) => {
   }
 };
 
-// controllers/adminController.js (Add this function)
+// ── 7. USER CREDIT USAGE (FIXED AGGREGATION) ──
 export const getUserCreditUsage = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // Aggregate usage per user from the Asset collection.
-    // Assumes Asset has { userId, creditsCost, createdAt, type }
     const usage = await Asset.aggregate([
       {
         $group: {
           _id: '$userId',
-          totalCreditsUsed: { $sum: '$creditsCost' }, // Ensure you save 'creditsCost' when creating an asset
+          // Use $ifNull so assets without creditsCost don't break the sum
+          totalCreditsUsed: { $sum: { $ifNull: ['$creditsCost', 0] } },
           generationCount: { $sum: 1 },
           lastGenerationAt: { $max: '$createdAt' },
         },
@@ -306,40 +285,36 @@ export const getUserCreditUsage = async (req, res) => {
       { $limit: limit },
       {
         $lookup: {
-          from: 'users', // Name of your users collection
+          from: 'users',
           localField: '_id',
           foreignField: '_id',
           as: 'user',
         },
       },
-      { $unwind: '$user' },
+      // ✅ CRITICAL FIX: preserveNullAndEmptyArrays prevents crash on orphaned assets
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           userId: '$_id',
-          email: '$user.email',
+          // Fallback for deleted users
+          email: { $ifNull: ['$user.email', 'Deleted user'] },
           totalCreditsUsed: 1,
           generationCount: 1,
           lastGenerationAt: 1,
-          remainingCredits: '$user.credits',
+          remainingCredits: { $ifNull: ['$user.credits', 0] },
         },
       },
     ]);
 
-    // Get total count of users who have generated
     const totalAgg = await Asset.aggregate([
       { $group: { _id: '$userId' } },
       { $count: 'count' },
     ]);
     const total = totalAgg[0]?.count || 0;
 
-    res.json({
-      usage,
-      total,
-      pages: Math.ceil(total / limit),
-      page,
-    });
+    res.json({ usage, total, pages: Math.ceil(total / limit), page });
   } catch (err) {
-    console.error('[getUserCreditUsage]', err);
+    console.error('[getUserCreditUsage] FULL ERROR:', err);
     res.status(500).json({ error: err.message });
   }
 };
