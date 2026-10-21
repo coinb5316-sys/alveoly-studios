@@ -12,7 +12,7 @@ const Icon = ({ path, className = 'h-4 w-4' }) => (
     className={className}
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -32,33 +32,27 @@ const ICONS = {
   arrow: 'M5 12h14M12 5l7 7-7 7',
 };
 
-const GradientText = ({ children }) => (
-  <span className="bg-gradient-to-r from-[#c4b5fd] via-[#a78bfa] to-[#818cf8] bg-clip-text text-transparent">
-    {children}
-  </span>
-);
-
 /* ─────────────────────────────────────────────
-   Section renderer
+   Policy section — cream theme
    ───────────────────────────────────────────── */
 function PolicySection({ id, number, title, icon, accent, children }) {
   return (
     <section id={id} className="scroll-mt-28">
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         <span
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{ color: accent, backgroundColor: `${accent}1f` }}
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{ color: accent, backgroundColor: `${accent}14` }}
         >
           <Icon path={icon} className="h-4 w-4" />
         </span>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-white">
-            <span className="mr-2 font-mono text-[11px] text-white/30">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[15.5px] font-semibold text-[#1a1a1a]">
+            <span className="mr-2 font-mono text-[11px] font-medium text-[#b8b0a3]">
               {String(number).padStart(2, '0')}
             </span>
             {title}
           </h2>
-          <div className="mt-2 space-y-3 text-[13px] leading-7 text-white/55">{children}</div>
+          <div className="mt-2.5 space-y-3 text-[13.5px] leading-7 text-[#4a4a4a]">{children}</div>
         </div>
       </div>
     </section>
@@ -82,35 +76,42 @@ export default function Terms() {
   return (
     <main
       id="top"
-      className="page-scroll min-h-screen bg-[var(--surface-0)] text-[var(--text-primary)]"
+      className="page-scroll min-h-screen overflow-x-hidden bg-[#fdfbf7] text-[#1a1a1a]"
     >
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-[10%] left-[20%] h-[500px] w-[500px] rounded-full bg-[var(--coral)] opacity-[0.06] blur-[130px]" />
+        <div className="absolute top-[45%] right-[10%] h-[420px] w-[420px] rounded-full bg-[var(--violet)] opacity-[0.05] blur-[130px]" />
+      </div>
+
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden px-5 pt-32 pb-12 sm:px-8">
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-gradient-to-br from-fuchsia-500/12 via-violet-500/10 to-transparent blur-3xl" />
-
-        <div className="relative mx-auto max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/25 bg-fuchsia-500/10 px-3 py-1 text-[11px] font-medium text-fuchsia-200">
-            <Icon path={ICONS.scroll} className="h-3 w-3" />
+      <section className="relative px-5 pt-28 pb-12 sm:px-8 sm:pt-32">
+        <div className="relative mx-auto max-w-3xl text-center">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-[11.5px] font-medium text-[#4a4a4a] backdrop-blur">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-[var(--coral)] animate-pulse" />
             The ground rules
-          </span>
+          </div>
 
-          <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl">
-            Terms of <GradientText>Service</GradientText>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[58px] lg:leading-[1.05]">
+            Terms of{' '}
+            <span className="font-serif-human italic font-medium text-[var(--coral)]">
+              Service.
+            </span>
           </h1>
 
-          <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-white/55">
+          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-[#6b6b6b] sm:text-base">
             What you can expect from us, and what we ask of you in return. Written
             to be read — not skimmed.
           </p>
 
-          <div className="mt-4 flex items-center gap-3 text-[11px] text-white/35">
+          <div className="mt-5 flex items-center justify-center gap-3 text-[12px] text-[#8a8a8a]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Last updated: October 2026
             </span>
-            <span className="h-3 w-px bg-white/10" />
+            <span className="h-3 w-px bg-black/10" />
             <span>~5 min read</span>
           </div>
         </div>
@@ -122,17 +123,17 @@ export default function Terms() {
           {/* Sticky TOC */}
           <aside className="hidden lg:block">
             <div className="sticky top-28">
-              <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-wider text-white/35">
+              <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#b8b0a3]">
                 On this page
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {sections.map((s, i) => (
                   <li key={s.id}>
                     <a
                       href={`#${s.id}`}
-                      className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-white/45 transition hover:bg-white/[0.03] hover:text-white/80"
+                      className="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-[#6b6b6b] transition hover:bg-black/[0.03] hover:text-[#1a1a1a]"
                     >
-                      <span className="font-mono text-[10px] text-white/25 group-hover:text-fuchsia-300">
+                      <span className="font-mono text-[10px] font-medium text-[#c8c0b3] group-hover:text-[var(--coral)]">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       {s.label}
@@ -144,15 +145,15 @@ export default function Terms() {
           </aside>
 
           {/* Content */}
-          <div className="space-y-8">
-            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 sm:p-8">
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-black/[0.07] bg-white p-7 shadow-sm sm:p-10">
               <div className="space-y-8">
                 <PolicySection
                   id="acceptance"
                   number={1}
                   title="Acceptance of terms"
                   icon={ICONS.shield}
-                  accent="#a78bfa"
+                  accent="#6b5b95"
                 >
                   <p>
                     By accessing or using Alveoly Studios, you agree to be bound by
@@ -161,14 +162,14 @@ export default function Terms() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="service"
                   number={2}
                   title="Description of service"
                   icon={ICONS.sparkles}
-                  accent="#34d399"
+                  accent="#ff6b6b"
                 >
                   <p>
                     Alveoly Studios provides AI-powered image, video, and audio
@@ -181,14 +182,14 @@ export default function Terms() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="accounts"
                   number={3}
                   title="User accounts"
                   icon={ICONS.user}
-                  accent="#38bdf8"
+                  accent="#2a9d8f"
                 >
                   <p>
                     You’re responsible for keeping your login credentials confidential
@@ -199,7 +200,7 @@ export default function Terms() {
                     don’t recognize — tell us immediately at{' '}
                     <a
                       href="mailto:support@alveoly.studio"
-                      className="font-medium text-violet-300 underline-offset-2 hover:underline"
+                      className="font-medium text-[var(--coral)] underline-offset-2 hover:underline"
                     >
                       support@alveoly.studio
                     </a>
@@ -207,19 +208,19 @@ export default function Terms() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="payments"
                   number={4}
                   title="Credits & payments"
                   icon={ICONS.creditCard}
-                  accent="#fbbf24"
+                  accent="#e07a5f"
                 >
                   <p>
                     Credits are the currency of the studio. They’re{' '}
-                    <span className="font-medium text-white/80">non-refundable</span> and{' '}
-                    <span className="font-medium text-white/80">non-transferable</span>{' '}
+                    <span className="font-medium text-[#1a1a1a]">non-refundable</span> and{' '}
+                    <span className="font-medium text-[#1a1a1a]">non-transferable</span>{' '}
                     once purchased.
                   </p>
                   <p>
@@ -229,17 +230,17 @@ export default function Terms() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="content"
                   number={5}
                   title="Content rights"
                   icon={ICONS.copyright}
-                  accent="#fb7185"
+                  accent="#d96a4a"
                 >
                   <p>
-                    You <span className="font-medium text-white/80">own</span> everything
+                    You <span className="font-medium text-[#1a1a1a]">own</span> everything
                     you generate with Alveoly Studios.
                   </p>
                   <p>
@@ -249,53 +250,53 @@ export default function Terms() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="prohibited"
                   number={6}
                   title="Prohibited uses"
                   icon={ICONS.alert}
-                  accent="#f43f5e"
+                  accent="#d93636"
                 >
                   <p>You may not use Alveoly Studios to generate or distribute:</p>
-                  <ul className="ml-1 space-y-1.5">
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                  <ul className="space-y-2">
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d93636]" />
                       Illegal content of any kind.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d93636]" />
                       Deepfakes or likenesses of real people without their consent.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d93636]" />
                       Content that infringes someone else’s copyright or trademarks.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d93636]" />
                       Harassment, hate speech, or content that harms minors.
                     </li>
                   </ul>
-                  <p className="text-white/40">
+                  <p className="text-[#8a8a8a]">
                     Accounts that violate these rules may be suspended without refund.
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="contact"
                   number={7}
                   title="Contact us"
                   icon={ICONS.mail}
-                  accent="#818cf8"
+                  accent="#6b5b95"
                 >
                   <p>
                     Questions about these terms? Email{' '}
                     <a
                       href="mailto:legal@alveoly.studio"
-                      className="font-medium text-violet-300 underline-offset-2 hover:underline"
+                      className="font-medium text-[var(--coral)] underline-offset-2 hover:underline"
                     >
                       legal@alveoly.studio
                     </a>{' '}
@@ -306,16 +307,16 @@ export default function Terms() {
             </div>
 
             {/* Related */}
-            <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-sm sm:flex-row sm:items-center">
               <div>
-                <p className="text-[12.5px] font-medium text-white">Also worth a read</p>
-                <p className="text-[11.5px] text-white/45">
+                <p className="text-[13px] font-medium text-[#1a1a1a]">Also worth a read</p>
+                <p className="text-[12px] text-[#6b6b6b]">
                   How we handle your data, in plain English.
                 </p>
               </div>
               <Link
                 to="/privacy"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[11.5px] font-medium text-white/75 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-[12px] font-medium text-[#1a1a1a] transition hover:border-black/20 hover:bg-black/[0.03]"
               >
                 Privacy Policy
                 <Icon path={ICONS.arrow} className="h-3 w-3" />

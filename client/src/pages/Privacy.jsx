@@ -12,7 +12,7 @@ const Icon = ({ path, className = 'h-4 w-4' }) => (
     className={className}
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -30,33 +30,27 @@ const ICONS = {
   arrow: 'M5 12h14M12 5l7 7-7 7',
 };
 
-const GradientText = ({ children }) => (
-  <span className="bg-gradient-to-r from-[#c4b5fd] via-[#a78bfa] to-[#818cf8] bg-clip-text text-transparent">
-    {children}
-  </span>
-);
-
 /* ─────────────────────────────────────────────
-   Section renderer
+   Policy section — cream theme
    ───────────────────────────────────────────── */
 function PolicySection({ id, number, title, icon, accent, children }) {
   return (
     <section id={id} className="scroll-mt-28">
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         <span
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{ color: accent, backgroundColor: `${accent}1f` }}
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{ color: accent, backgroundColor: `${accent}14` }}
         >
           <Icon path={icon} className="h-4 w-4" />
         </span>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-white">
-            <span className="mr-2 font-mono text-[11px] text-white/30">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[15.5px] font-semibold text-[#1a1a1a]">
+            <span className="mr-2 font-mono text-[11px] font-medium text-[#b8b0a3]">
               {String(number).padStart(2, '0')}
             </span>
             {title}
           </h2>
-          <div className="mt-2 space-y-3 text-[13px] leading-7 text-white/55">{children}</div>
+          <div className="mt-2.5 space-y-3 text-[13.5px] leading-7 text-[#4a4a4a]">{children}</div>
         </div>
       </div>
     </section>
@@ -79,35 +73,42 @@ export default function Privacy() {
   return (
     <main
       id="top"
-      className="page-scroll min-h-screen bg-[var(--surface-0)] text-[var(--text-primary)]"
+      className="page-scroll min-h-screen overflow-x-hidden bg-[#fdfbf7] text-[#1a1a1a]"
     >
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-[10%] left-[20%] h-[500px] w-[500px] rounded-full bg-[var(--coral)] opacity-[0.06] blur-[130px]" />
+        <div className="absolute top-[45%] right-[10%] h-[420px] w-[420px] rounded-full bg-[var(--violet)] opacity-[0.05] blur-[130px]" />
+      </div>
+
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden px-5 pt-32 pb-12 sm:px-8">
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[360px] w-[720px] -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500/12 via-sky-500/8 to-transparent blur-3xl" />
-
-        <div className="relative mx-auto max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-200">
-            <Icon path={ICONS.shield} className="h-3 w-3" />
+      <section className="relative px-5 pt-28 pb-12 sm:px-8 sm:pt-32">
+        <div className="relative mx-auto max-w-3xl text-center">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-[11.5px] font-medium text-[#4a4a4a] backdrop-blur">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-[var(--coral)] animate-pulse" />
             Your privacy matters
-          </span>
+          </div>
 
-          <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl">
-            Privacy <GradientText>Policy</GradientText>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[58px] lg:leading-[1.05]">
+            Privacy{' '}
+            <span className="font-serif-human italic font-medium text-[var(--coral)]">
+              Policy.
+            </span>
           </h1>
 
-          <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-white/55">
+          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-[#6b6b6b] sm:text-base">
             Plain-English summary of what we collect, why we collect it, and the
             control you have over your data. No legalese, no surprises.
           </p>
 
-          <div className="mt-4 flex items-center gap-3 text-[11px] text-white/35">
+          <div className="mt-5 flex items-center justify-center gap-3 text-[12px] text-[#8a8a8a]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Last updated: October 2026
             </span>
-            <span className="h-3 w-px bg-white/10" />
+            <span className="h-3 w-px bg-black/10" />
             <span>~4 min read</span>
           </div>
         </div>
@@ -119,17 +120,17 @@ export default function Privacy() {
           {/* Sticky TOC */}
           <aside className="hidden lg:block">
             <div className="sticky top-28">
-              <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-wider text-white/35">
+              <p className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#b8b0a3]">
                 On this page
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {sections.map((s, i) => (
                   <li key={s.id}>
                     <a
                       href={`#${s.id}`}
-                      className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] text-white/45 transition hover:bg-white/[0.03] hover:text-white/80"
+                      className="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-[12.5px] text-[#6b6b6b] transition hover:bg-black/[0.03] hover:text-[#1a1a1a]"
                     >
-                      <span className="font-mono text-[10px] text-white/25 group-hover:text-violet-300">
+                      <span className="font-mono text-[10px] font-medium text-[#c8c0b3] group-hover:text-[var(--coral)]">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       {s.label}
@@ -141,50 +142,50 @@ export default function Privacy() {
           </aside>
 
           {/* Content */}
-          <div className="space-y-8">
-            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 sm:p-8">
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-black/[0.07] bg-white p-7 shadow-sm sm:p-10">
               <div className="space-y-8">
                 <PolicySection
                   id="collect"
                   number={1}
                   title="Information we collect"
                   icon={ICONS.eye}
-                  accent="#a78bfa"
+                  accent="#ff6b6b"
                 >
                   <p>
                     We collect the minimum we need to run the studio well: your{' '}
-                    <span className="font-medium text-white/80">email address</span>, an{' '}
-                    <span className="font-medium text-white/80">encrypted password</span>{' '}
+                    <span className="font-medium text-[#1a1a1a]">email address</span>, an{' '}
+                    <span className="font-medium text-[#1a1a1a]">encrypted password</span>{' '}
                     (never stored in plain text), and lightweight usage data such as which
                     tools you use and when. That’s it.
                   </p>
                   <p>
-                    We do <span className="font-medium text-white/80">not</span> sell,
+                    We do <span className="font-medium text-[#1a1a1a]">not</span> sell,
                     rent, or trade your personal information with anyone — ever.
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="use"
                   number={2}
                   title="How we use your information"
                   icon={ICONS.users}
-                  accent="#34d399"
+                  accent="#2a9d8f"
                 >
                   <p>Your information helps us:</p>
-                  <ul className="ml-1 space-y-1.5">
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                  <ul className="space-y-2">
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#2a9d8f]" />
                       Authenticate you securely and keep your account safe.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#2a9d8f]" />
                       Process payments through Paystack and issue credits correctly.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#2a9d8f]" />
                       Improve the product based on what actually helps creators.
                     </li>
                   </ul>
@@ -194,85 +195,85 @@ export default function Privacy() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="security"
                   number={3}
                   title="Data security"
                   icon={ICONS.lock}
-                  accent="#38bdf8"
+                  accent="#6b5b95"
                 >
                   <p>
                     We use industry-standard encryption in transit and at rest, plus
                     hardened infrastructure and least-privilege access controls. Your
                     password is hashed with bcrypt and never leaves our servers.
                   </p>
-                  <p className="text-white/40">
+                  <p className="text-[#8a8a8a]">
                     No method of transmission over the internet is 100% secure — but we
                     treat your data the way we’d want ours treated.
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="third-party"
                   number={4}
                   title="Third-party services"
                   icon={ICONS.server}
-                  accent="#fbbf24"
+                  accent="#e07a5f"
                 >
                   <p>We work with a small, trusted set of partners:</p>
-                  <ul className="ml-1 space-y-1.5">
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                  <ul className="space-y-2">
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#e07a5f]" />
                       <span>
-                        <span className="font-medium text-white/80">Magic Hour</span> — powers
+                        <span className="font-medium text-[#1a1a1a]">Magic Hour</span> — powers
                         image, video & audio generation.
                       </span>
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#e07a5f]" />
                       <span>
-                        <span className="font-medium text-white/80">Cloudinary</span> — stores
+                        <span className="font-medium text-[#1a1a1a]">Cloudinary</span> — stores
                         your generated assets.
                       </span>
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#e07a5f]" />
                       <span>
-                        <span className="font-medium text-white/80">Paystack</span> — handles
+                        <span className="font-medium text-[#1a1a1a]">Paystack</span> — handles
                         payments securely.
                       </span>
                     </li>
                   </ul>
-                  <p className="text-white/40">
+                  <p className="text-[#8a8a8a]">
                     Each has its own privacy policy and independent security posture.
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="rights"
                   number={5}
                   title="Your rights"
                   icon={ICONS.shield}
-                  accent="#fb7185"
+                  accent="#d96a4a"
                 >
                   <p>You can, at any time:</p>
-                  <ul className="ml-1 space-y-1.5">
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                  <ul className="space-y-2">
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d96a4a]" />
                       Request a copy of the personal data we hold about you.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d96a4a]" />
                       Ask us to correct anything that’s inaccurate.
                     </li>
-                    <li className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-rose-400" />
+                    <li className="flex gap-2.5">
+                      <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-[#d96a4a]" />
                       Delete your account and associated data.
                     </li>
                   </ul>
@@ -281,20 +282,20 @@ export default function Privacy() {
                   </p>
                 </PolicySection>
 
-                <div className="h-px bg-white/[0.05]" />
+                <div className="h-px bg-black/[0.06]" />
 
                 <PolicySection
                   id="contact"
                   number={6}
                   title="Contact us"
                   icon={ICONS.mail}
-                  accent="#818cf8"
+                  accent="#6b5b95"
                 >
                   <p>
                     Questions about your data? Reach out anytime at{' '}
                     <a
                       href="mailto:privacy@alveoly.studio"
-                      className="font-medium text-violet-300 underline-offset-2 hover:underline"
+                      className="font-medium text-[var(--coral)] underline-offset-2 hover:underline"
                     >
                       privacy@alveoly.studio
                     </a>
@@ -305,16 +306,16 @@ export default function Privacy() {
             </div>
 
             {/* Related */}
-            <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 sm:flex-row sm:items-center">
+            <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-sm sm:flex-row sm:items-center">
               <div>
-                <p className="text-[12.5px] font-medium text-white">Also worth a read</p>
-                <p className="text-[11.5px] text-white/45">
+                <p className="text-[13px] font-medium text-[#1a1a1a]">Also worth a read</p>
+                <p className="text-[12px] text-[#6b6b6b]">
                   Our Terms explain the rules of using the studio.
                 </p>
               </div>
               <Link
                 to="/terms"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[11.5px] font-medium text-white/75 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-[12px] font-medium text-[#1a1a1a] transition hover:border-black/20 hover:bg-black/[0.03]"
               >
                 Terms of Service
                 <Icon path={ICONS.arrow} className="h-3 w-3" />

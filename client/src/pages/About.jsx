@@ -4,7 +4,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 
 /* ─────────────────────────────────────────────
-   Inline icons (consistent with admin dashboard)
+   Inline icons
    ───────────────────────────────────────────── */
 const Icon = ({ path, className = 'h-4 w-4' }) => (
   <svg
@@ -12,7 +12,7 @@ const Icon = ({ path, className = 'h-4 w-4' }) => (
     className={className}
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.8"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -37,34 +37,25 @@ const ICONS = {
 };
 
 /* ─────────────────────────────────────────────
-   Shared gradient text accent
-   ───────────────────────────────────────────── */
-const GradientText = ({ children }) => (
-  <span className="bg-gradient-to-r from-[#c4b5fd] via-[#a78bfa] to-[#818cf8] bg-clip-text text-transparent">
-    {children}
-  </span>
-);
-
-/* ─────────────────────────────────────────────
-   Tech stack card
+   Tech card (cream theme)
    ───────────────────────────────────────────── */
 function TechCard({ icon, title, subtitle, accent }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-lg hover:shadow-black/20">
+    <div className="group relative overflow-hidden rounded-2xl border border-black/[0.07] bg-white p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/[0.12] hover:shadow-md">
       <div
-        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-30"
+        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-20"
         style={{ background: accent }}
       />
-      <div className="relative flex items-start gap-3">
+      <div className="relative flex items-start gap-3.5">
         <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
-          style={{ color: accent, backgroundColor: `${accent}1f` }}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+          style={{ color: accent, backgroundColor: `${accent}14` }}
         >
-          <Icon path={icon} className="h-4 w-4" />
+          <Icon path={icon} className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">
-          <p className="text-[12.5px] font-semibold text-white">{title}</p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-white/45">{subtitle}</p>
+          <p className="text-[13.5px] font-semibold text-[#1a1a1a]">{title}</p>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-[#6b6b6b]">{subtitle}</p>
         </div>
       </div>
     </div>
@@ -72,19 +63,19 @@ function TechCard({ icon, title, subtitle, accent }) {
 }
 
 /* ─────────────────────────────────────────────
-   Value pillar
+   Value card (cream theme)
    ───────────────────────────────────────────── */
 function ValueCard({ icon, title, body, accent }) {
   return (
-    <div className="group relative rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 transition-all duration-300 hover:border-white/[0.14]">
+    <div className="group relative rounded-2xl border border-black/[0.07] bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/[0.12] hover:shadow-md">
       <span
-        className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
-        style={{ color: accent, backgroundColor: `${accent}1a` }}
+        className="mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+        style={{ color: accent, backgroundColor: `${accent}14` }}
       >
-        <Icon path={icon} className="h-4.5 w-4.5" />
+        <Icon path={icon} className="h-5 w-5" />
       </span>
-      <h3 className="text-[13.5px] font-semibold text-white">{title}</h3>
-      <p className="mt-1.5 text-[12px] leading-relaxed text-white/45">{body}</p>
+      <h3 className="text-[15px] font-semibold text-[#1a1a1a]">{title}</h3>
+      <p className="mt-2 text-[13px] leading-6 text-[#6b6b6b]">{body}</p>
     </div>
   );
 }
@@ -98,77 +89,83 @@ export default function About() {
       icon: ICONS.sparkles,
       title: 'Creativity for everyone',
       body: 'World-class AI tools shouldn’t be locked behind enterprise contracts. We keep it simple, fast, and accessible.',
-      accent: '#a78bfa',
+      accent: '#ff6b6b', // coral (from pricing)
     },
     {
       icon: ICONS.heart,
       title: 'Built with care',
       body: 'Every detail — from the copy to the color — is chosen to respect your time and make creation feel effortless.',
-      accent: '#fb7185',
+      accent: '#e07a5f',
     },
     {
       icon: ICONS.globe,
       title: 'Rooted in Ghana, built for the world',
       body: 'We are proudly Ghanaian, designing for creators across Africa and beyond with fair, transparent pricing.',
-      accent: '#34d399',
+      accent: '#2a9d8f',
     },
     {
       icon: ICONS.shield,
       title: 'Your work, your data',
       body: 'You own everything you generate. No training on your content, no hidden reuse — just clean, private storage.',
-      accent: '#38bdf8',
+      accent: '#6b5b95', // violet (from pricing var)
     },
   ];
 
   const stack = [
-    { icon: ICONS.sparkles, title: 'Magic Hour AI', subtitle: 'Video, image & audio generation', accent: '#a78bfa' },
-    { icon: ICONS.cloud, title: 'Cloudinary', subtitle: 'Fast, global asset storage', accent: '#38bdf8' },
-    { icon: ICONS.creditCard, title: 'Paystack', subtitle: 'Secure payments across Africa', accent: '#34d399' },
-    { icon: ICONS.layers, title: 'React + Vite', subtitle: 'A snappy, modern frontend', accent: '#fbbf24' },
-    { icon: ICONS.server, title: 'Node.js + Express', subtitle: 'A lean, reliable backend', accent: '#fb7185' },
-    { icon: ICONS.database, title: 'MongoDB', subtitle: 'Flexible data at scale', accent: '#818cf8' },
+    { icon: ICONS.sparkles, title: 'Magic Hour AI', subtitle: 'Video, image & audio generation', accent: '#ff6b6b' },
+    { icon: ICONS.cloud, title: 'Cloudinary', subtitle: 'Fast, global asset storage', accent: '#2a9d8f' },
+    { icon: ICONS.creditCard, title: 'Paystack', subtitle: 'Secure payments across Africa', accent: '#e07a5f' },
+    { icon: ICONS.layers, title: 'React + Vite', subtitle: 'A snappy, modern frontend', accent: '#6b5b95' },
+    { icon: ICONS.server, title: 'Node.js + Express', subtitle: 'A lean, reliable backend', accent: '#4a7c59' },
+    { icon: ICONS.database, title: 'MongoDB', subtitle: 'Flexible data at scale', accent: '#8a5a44' },
   ];
 
   return (
     <main
       id="top"
-      className="page-scroll min-h-screen bg-[var(--surface-0)] text-[var(--text-primary)]"
+      className="page-scroll min-h-screen overflow-x-hidden bg-[#fdfbf7] text-[#1a1a1a]"
     >
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-[10%] left-[20%] h-[500px] w-[500px] rounded-full bg-[var(--coral)] opacity-[0.06] blur-[130px]" />
+        <div className="absolute top-[45%] right-[10%] h-[420px] w-[420px] rounded-full bg-[var(--violet)] opacity-[0.05] blur-[130px]" />
+      </div>
+
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden px-5 pt-32 pb-16 sm:px-8">
-        {/* Soft ambient glows — blends into surface */}
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-transparent blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-40 h-64 w-64 rounded-full bg-emerald-500/[0.07] blur-3xl" />
-
+      <section className="relative px-5 pt-28 pb-16 sm:px-8 sm:pt-32">
         <div className="relative mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-200">
-            <Icon path={ICONS.sparkles} className="h-3 w-3" />
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-[11.5px] font-medium text-[#4a4a4a] backdrop-blur">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-[var(--coral)] animate-pulse" />
             About the studio
-          </span>
+          </div>
 
-          <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-            Creativity, <GradientText>amplified</GradientText> by AI.
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[60px] lg:leading-[1.05]">
+            Creativity,{' '}
+            <span className="font-serif-human italic font-medium text-[var(--coral)]">
+              amplified
+            </span>{' '}
+            by AI.
           </h1>
 
-          <p className="mx-auto mt-5 max-w-xl text-[14.5px] leading-relaxed text-white/55">
+          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-7 text-[#6b6b6b] sm:text-base">
             Alveoly Studios brings the world’s best generative models into one calm,
             beautiful studio — so you can spend less time juggling tools and more
             time making things people love.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-[12.5px] font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:shadow-violet-500/35"
+              className="inline-flex items-center gap-2 rounded-full bg-[#1a1a1a] px-7 py-3.5 text-[14px] font-semibold text-white transition hover:bg-[#2b2b2b] hover:-translate-y-0.5"
             >
               Start creating
               <Icon path={ICONS.arrow} className="h-3.5 w-3.5" />
             </Link>
             <Link
               to="/pricing"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[12.5px] font-medium text-white/75 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-7 py-3.5 text-[14px] font-medium text-[#1a1a1a] transition hover:border-black/20 hover:bg-black/[0.03]"
             >
               See pricing
             </Link>
@@ -179,12 +176,21 @@ export default function About() {
       {/* ── Story ── */}
       <section className="px-5 pb-16 sm:px-8">
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 sm:p-8">
-            <h2 className="text-lg font-semibold text-white">Our story</h2>
-            <div className="mt-4 space-y-4 text-[13.5px] leading-7 text-white/55">
+          <div className="rounded-3xl border border-black/[0.07] bg-white p-8 shadow-sm sm:p-10">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--coral)]">
+              Our story
+            </span>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#1a1a1a]">
+              A studio built for the way{' '}
+              <span className="font-serif-human italic text-[var(--coral)]">
+                creators actually work.
+              </span>
+            </h2>
+            <div className="mt-5 space-y-4 text-[14px] leading-7 text-[#4a4a4a]">
               <p>
-                Alveoly Studios was born in <span className="font-medium text-white/80">Ghana 🇬🇭</span>{' '}
-                with a simple, stubborn belief: professional AI tools shouldn’t be a
+                Alveoly Studios was born in{' '}
+                <span className="font-medium text-[#1a1a1a]">Ghana 🇬🇭</span> with a
+                simple, stubborn belief: professional AI tools shouldn’t be a
                 privilege. They should feel as natural as opening a notebook.
               </p>
               <p>
@@ -207,14 +213,17 @@ export default function About() {
       {/* ── Values ── */}
       <section className="px-5 pb-16 sm:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-semibold text-white">What we believe</h2>
-            <p className="mt-2 text-[13px] text-white/45">
+          <div className="mb-10 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              What we{' '}
+              <span className="font-serif-human italic text-[var(--coral)]">believe.</span>
+            </h2>
+            <p className="mt-2 text-[14px] text-[#6b6b6b]">
               The principles that shape every decision we make.
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {values.map((v) => (
               <ValueCard key={v.title} {...v} />
             ))}
@@ -225,20 +234,23 @@ export default function About() {
       {/* ── Tech stack ── */}
       <section className="px-5 pb-20 sm:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-8 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end">
+          <div className="mb-10 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-2xl font-semibold text-white">Under the hood</h2>
-              <p className="mt-2 text-[13px] text-white/45">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                Under the{' '}
+                <span className="font-serif-human italic text-[var(--coral)]">hood.</span>
+              </h2>
+              <p className="mt-2 text-[14px] text-[#6b6b6b]">
                 The tools we trust to power every generation.
               </p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10.5px] font-medium uppercase tracking-wider text-white/45">
+            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-[#6b6b6b] backdrop-blur">
               <Icon path={ICONS.code} className="h-3 w-3" />
               Modern, dependable stack
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {stack.map((s) => (
               <TechCard key={s.title} {...s} />
             ))}
@@ -246,37 +258,35 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ── CTA (dark, matches pricing bottom block) ── */}
       <section className="px-5 pb-24 sm:px-8">
-        <div className="relative mx-auto max-w-3xl overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-violet-500/[0.12] via-fuchsia-500/[0.06] to-transparent p-8 text-center">
-          <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full bg-violet-500/20 blur-3xl" />
-          <div className="relative">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1 text-[10.5px] font-medium text-violet-200">
-              <Icon path={ICONS.rocket} className="h-3 w-3" />
-              Ready when you are
-            </span>
-            <h2 className="mt-4 text-2xl font-semibold text-white sm:text-3xl">
-              Bring your next idea to life.
-            </h2>
-            <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-white/50">
-              No setup, no steep learning curve — just your imagination and the
-              best AI models, working together.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2.5 text-[12.5px] font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/40"
-              >
-                <Icon path={ICONS.zap} className="h-3.5 w-3.5" />
-                Open the studio
-              </Link>
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[12.5px] font-medium text-white/75 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-              >
-                Talk to us
-              </Link>
-            </div>
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-[36px] bg-[#1a1a1a] px-6 py-16 text-center text-white sm:px-12">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-medium text-white/70 backdrop-blur">
+            <Icon path={ICONS.rocket} className="h-3 w-3" />
+            Ready when you are
+          </span>
+          <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">
+            Bring your next idea to{' '}
+            <span className="font-serif-human italic text-[var(--coral)]">life.</span>
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-[14.5px] text-white/60">
+            No setup, no steep learning curve — just your imagination and the best
+            AI models, working together.
+          </p>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[14px] font-semibold text-black transition hover:bg-gray-100 hover:-translate-y-0.5"
+            >
+              <Icon path={ICONS.zap} className="h-4 w-4" />
+              Open the studio
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-7 py-3.5 text-[14px] font-medium text-white backdrop-blur transition hover:bg-white/10"
+            >
+              Talk to us
+            </Link>
           </div>
         </div>
       </section>
