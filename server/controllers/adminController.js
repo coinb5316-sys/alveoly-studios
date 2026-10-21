@@ -4,6 +4,8 @@ import Asset from '../models/Asset.js';
 import Setting from '../models/Setting.js';
 import Transaction from '../models/Transaction.js';
 import Notification from '../models/Notification.js';
+import { getMagicHourAccountBalance } from '../services/magicHourAccount.js';
+
 
 const DEFAULT_PLANS = {
   free: { monthlyUSD: 0, yearlyUSD: 0, credits: 5 },
@@ -253,6 +255,91 @@ export const sendNotification = async (req, res) => {
     await Notification.create({ userId, title, message, type });
     res.json({ message: 'Notification sent' });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── 6. MAGIC HOUR MONITORING ──
+export const getMagicHourBalance = async (req, res) => {
+  try {
+    const account = await getMagicHourAccountBalance();
+    
+    // Optional: Add a "low balance" warning threshold
+    const lowBalanceThreshold = 1000; // Example: warn if below 1000 credits
+    
+    res.json({
+      success: true,
+      data: {
+        ...account,
+        lowBalance: account.credits < lowBalanceThreshold,
+        threshold: lowBalanceThreshold,
+        // Estimate value in GHS for admin context (using a fixed rate for now)
+        estimatedValueGHS: Math.round(account.credits * 0.05 * 15), // e.g., 0.05 USD per credit * 15 GHS
+      },
+    });
+  } catch (err) {
+    console.error('[getMagicHourBalance]', err);
+    res.status(500).json({ error: err.message || 'Failed to fetch Magic Hour balance.' });
+  }
+};
+
+// controllers/adminController.js (Add this function)
+export const getUserCreditUsage = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Aggregate usage per user from the Asset collection.
+    // Assumes Asset has { userId, creditsCost, createdAt, type }
+    const usage = await Asset.aggregate([
+      {
+        $group: {
+          _id: '$userId',
+          totalCreditsUsed: { $sum: '$creditsCost' }, // Ensure you save 'creditsCost' when creating an asset
+          generationCount: { $sum: 1 },
+          lastGenerationAt: { $max: '$createdAt' },
+        },
+      },
+      { $sort: { totalCreditsUsed: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users', // Name of your users collection
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          userId: '$_id',
+          email: '$user.email',
+          totalCreditsUsed: 1,
+          generationCount: 1,
+          lastGenerationAt: 1,
+          remainingCredits: '$user.credits',
+        },
+      },
+    ]);
+
+    // Get total count of users who have generated
+    const totalAgg = await Asset.aggregate([
+      { $group: { _id: '$userId' } },
+      { $count: 'count' },
+    ]);
+    const total = totalAgg[0]?.count || 0;
+
+    res.json({
+      usage,
+      total,
+      pages: Math.ceil(total / limit),
+      page,
+    });
+  } catch (err) {
+    console.error('[getUserCreditUsage]', err);
     res.status(500).json({ error: err.message });
   }
 };

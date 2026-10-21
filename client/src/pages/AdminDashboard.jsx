@@ -34,6 +34,7 @@ import AdminChat from '../components/admin/AdminChat';
 // --- UI Components ---
 import QueueDrawer from '../components/studio/QueueDrawer';
 import CommandPalette from '../components/studio/CommandPalette';
+import AdminMagicHour from '../components/admin/AdminMagicHour';
 
 // Strip trailing "/api" — matches all other dashboards
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
@@ -69,6 +70,7 @@ const ADMIN_NAV = [
   { to: '/admin/payments', label: 'Payments', icon: 'payments', exact: false },
   { to: '/admin/chat', label: 'Live Chat', icon: 'chat', exact: false, badgeKey: 'chat' },
   { to: '/admin/settings', label: 'Settings & Pricing', icon: 'settings', exact: false },
+  { to: '/admin/magic-hour', label: 'Magic Hour', icon: 'sparkles', exact: false }, // Use an appropriate icon
 ];
 
 /* ─────────────────────────────────────────────
@@ -450,6 +452,7 @@ export default function AdminDashboard() {
                 <Route path="payments" element={<AdminPayments />} />
                 <Route path="chat" element={<AdminChat />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="magic-hour" element={<AdminMagicHour />} />
 
                 {/* Studio */}
                 <Route path="studio/image" element={<ImageGenerator key="image" />} />

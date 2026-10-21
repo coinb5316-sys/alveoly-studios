@@ -15,6 +15,8 @@ import {
   savePlans,
   deletePlanPrice,
   sendNotification,
+  getMagicHourBalance,
+  getUserCreditUsage,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -42,5 +44,10 @@ router.delete('/plans/:id', deletePlanPrice); // reset one plan to default
 
 // Notifications
 router.post('/notifications', sendNotification);
+
+// Magic Hour Monitoring
+router.get('/magic-hour/balance', getMagicHourBalance);
+
+router.get('/usage', getUserCreditUsage);
 
 export default router;
