@@ -33,7 +33,7 @@ export const checkVoiceClone = async (req, res) => {
         type: 'audio',
         kind: 'voice-clone',
         prompt: prompt || 'Voice clone',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         sourceUrl: sourceUrl || undefined,
       });
 

@@ -37,7 +37,7 @@ export const checkAudio = async (req, res) => {
         type: 'audio',
         kind: 'audio',
         prompt: prompt || '',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         voice: voice || undefined,
       });
 

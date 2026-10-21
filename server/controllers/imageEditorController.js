@@ -38,7 +38,7 @@ export const checkImageEdit = async (req, res) => {
         type: 'image',
         kind: 'image-edit',
         prompt: prompt || 'Image edit',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         sourceUrl: sourceUrl || undefined,
       });
 

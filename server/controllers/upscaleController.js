@@ -37,7 +37,7 @@ export const checkUpscale = async (req, res) => {
         type: 'image',
         kind: 'upscale',
         prompt: prompt || 'Upscaled image',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         sourceUrl: sourceUrl || undefined,
       });
 

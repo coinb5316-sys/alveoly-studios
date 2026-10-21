@@ -32,7 +32,7 @@ export const checkHeadshot = async (req, res) => {
         type: 'image',
         kind: 'headshot',
         prompt: prompt || 'Professional headshot',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         sourceUrl: sourceUrl || undefined,
       });
 

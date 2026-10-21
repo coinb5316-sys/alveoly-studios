@@ -32,7 +32,7 @@ export const checkColorize = async (req, res) => {
         type: 'image',
         kind: 'colorize',
         prompt: 'Colorized photo',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         sourceUrl: sourceUrl || undefined,
       });
 

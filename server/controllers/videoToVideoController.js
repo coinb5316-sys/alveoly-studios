@@ -41,7 +41,7 @@ export const checkVideoToVideo = async (req, res) => {
         type: 'video',
         kind: 'video-to-video',
         prompt: prompt || '',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 5,
         style: style || undefined,
         duration: duration !== undefined ? Number(duration) : undefined,
         sourceUrl: sourceUrl || undefined,

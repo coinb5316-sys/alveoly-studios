@@ -34,7 +34,7 @@ export const checkVideo = async (req, res) => {
         type: 'video',
         kind: 'video',
         prompt: prompt || '',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 5,
         model: model || undefined,
         resolution: resolution || undefined,
         aspectRatio: aspectRatio || undefined,

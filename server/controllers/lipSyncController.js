@@ -33,7 +33,7 @@ export const checkLipSync = async (req, res) => {
         type: 'video',
         kind: 'lip-sync',
         prompt: prompt || 'Lip sync',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 5,
         sourceUrl: sourceUrl || undefined,
         duration: duration !== undefined ? Number(duration) : undefined,
       });

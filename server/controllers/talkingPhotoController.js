@@ -46,7 +46,7 @@ export const checkTalkingPhoto = async (req, res) => {
         type: 'video',
         kind: 'talking-photo',
         prompt: prompt || 'Talking photo',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 5,
         sourceUrl: sourceUrl || undefined,
         duration: duration !== undefined ? Number(duration) : undefined,
       });

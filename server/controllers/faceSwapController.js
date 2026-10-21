@@ -37,7 +37,7 @@ export const checkFaceSwap = async (req, res) => {
         type: 'image',
         kind: 'face-swap',
         prompt: 'Face swap',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         sourceUrl: sourceUrl || undefined,
       });
 

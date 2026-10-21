@@ -39,7 +39,7 @@ export const checkImageToVideo = async (req, res) => {
         type: 'video',
         kind: 'image-to-video',
         prompt: prompt || '',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 5,
         model: model || undefined,
         resolution: resolution || undefined,
         aspectRatio: aspectRatio || undefined,

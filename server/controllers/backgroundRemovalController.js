@@ -31,7 +31,7 @@ export const checkBackgroundRemoval = async (req, res) => {
         type: 'image',
         kind: 'background-removal',
         prompt: 'Background removed',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
       });
 
       if (req.toolCost && req.toolCost > 0) {

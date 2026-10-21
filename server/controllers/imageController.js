@@ -34,7 +34,7 @@ export const checkImage = async (req, res) => {
         type: 'image',
         kind: 'image',
         prompt: prompt || '',
-        cloudinaryUrl: permanentUrl,
+        cloudinaryUrl: permanentUrl, creditsCost: 1,
         model: model || undefined,
         style: style || undefined,
         aspectRatio: aspectRatio || undefined,

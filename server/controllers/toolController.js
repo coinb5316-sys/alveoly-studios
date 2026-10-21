@@ -42,7 +42,7 @@ export const checkSubtitle = async (req, res) => {
     const status = await checkSubtitleJob(projectId);
     if (status.status === 'complete') {
       const permanentUrl = await uploadFromPathOrUrl(status.downloadUrl, 'video');
-      await Asset.create({ userId: req.user.id, type: 'video', kind: 'subtitle', prompt: 'Subtitled video', cloudinaryUrl: permanentUrl, sourceUrl });
+      await Asset.create({ userId: req.user.id, type: 'video', kind: 'subtitle', prompt: 'Subtitled video', cloudinaryUrl: permanentUrl, creditsCost: 5, sourceUrl });
       if (req.toolCost && req.toolCost > 0) {
         await User.findByIdAndUpdate(req.user.id, { $inc: { credits: -req.toolCost } });
       }
@@ -78,7 +78,7 @@ export const checkTranslator = async (req, res) => {
     const status = await checkTranslatorJob(projectId);
     if (status.status === 'complete') {
       const permanentUrl = await uploadFromPathOrUrl(status.downloadUrl, 'video');
-      await Asset.create({ userId: req.user.id, type: 'video', kind: 'translate', prompt: 'Translated video', cloudinaryUrl: permanentUrl, sourceUrl });
+      await Asset.create({ userId: req.user.id, type: 'video', kind: 'translate', prompt: 'Translated video', cloudinaryUrl: permanentUrl, creditsCost: 5, sourceUrl });
       if (req.toolCost && req.toolCost > 0) {
         await User.findByIdAndUpdate(req.user.id, { $inc: { credits: -req.toolCost } });
       }
@@ -113,7 +113,7 @@ export const checkGif = async (req, res) => {
     const status = await checkGifJob(projectId);
     if (status.status === 'complete') {
       const permanentUrl = await uploadFromPathOrUrl(status.downloadUrl, 'image');
-      await Asset.create({ userId: req.user.id, type: 'image', kind: 'gif', prompt: 'AI GIF', cloudinaryUrl: permanentUrl });
+      await Asset.create({ userId: req.user.id, type: 'image', kind: 'gif', prompt: 'AI GIF', cloudinaryUrl: permanentUrl, creditsCost: 1 });
       if (req.toolCost && req.toolCost > 0) {
         await User.findByIdAndUpdate(req.user.id, { $inc: { credits: -req.toolCost } });
       }
@@ -149,7 +149,7 @@ export const checkAnimation = async (req, res) => {
     const status = await checkAnimationJob(projectId);
     if (status.status === 'complete') {
       const permanentUrl = await uploadFromPathOrUrl(status.downloadUrl, 'video');
-      await Asset.create({ userId: req.user.id, type: 'video', kind: 'animation', prompt: 'Animated video', cloudinaryUrl: permanentUrl, sourceUrl });
+      await Asset.create({ userId: req.user.id, type: 'video', kind: 'animation', prompt: 'Animated video', cloudinaryUrl: permanentUrl, creditsCost: 5, sourceUrl });
       if (req.toolCost && req.toolCost > 0) {
         await User.findByIdAndUpdate(req.user.id, { $inc: { credits: -req.toolCost } });
       }
