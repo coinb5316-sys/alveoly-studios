@@ -68,7 +68,7 @@ export default function AdminMagicHour() {
           </div>
           {balance.lowBalance && (
             <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11.5px] text-amber-200">
-              Your balance is below the {balance.threshold.toLocaleString()} credit threshold. Consider purchasing a top-up on the Magic Hour dashboard.
+              Your balance is below the {balance.threshold.toLocaleString()} credit threshold. Consider purchasing a top-up on the credit dashboard.
             </p>
           )}
         </div>
