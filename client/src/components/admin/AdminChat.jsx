@@ -126,6 +126,7 @@ export default function AdminChat() {
     })();
   }, [activeId, token]);
 
+  /* ── Auto-scroll ────────────────────────────── */
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
@@ -169,22 +170,35 @@ export default function AdminChat() {
   const active = conversations.find((c) => c._id === activeId);
 
   return (
-    <div className="grid h-[calc(100vh-140px)] grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
-      {/* List */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+    <div className="grid h-[calc(100dvh-110px)] grid-cols-1 gap-3 sm:gap-4 lg:h-[calc(100vh-140px)] lg:grid-cols-[340px_1fr]">
+      {/* ═══ LIST — hidden on mobile when a chat is open ═══ */}
+      <div
+        className={`${
+          active ? 'hidden lg:flex' : 'flex'
+        } min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]`}
+      >
+        {/* Header + search + filter */}
         <div className="space-y-2 border-b border-white/[0.06] p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+              Conversations
+            </p>
+            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-white/50">
+              {conversations.length}
+            </span>
+          </div>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, email, phone…"
-            className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder-white/30 outline-none focus:border-[#8b5cf6]/50"
+            className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder-white/30 outline-none transition focus:border-[#8b5cf6]/50"
           />
           <div className="flex gap-1">
             {['open', 'closed', 'all'].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
-                className={`flex-1 rounded-md px-2 py-1 text-[10.5px] font-medium capitalize transition ${
+                className={`flex-1 rounded-md px-2 py-1.5 text-[10.5px] font-medium capitalize transition ${
                   filter === s ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'
                 }`}
               >
@@ -193,10 +207,19 @@ export default function AdminChat() {
             ))}
           </div>
         </div>
+
+        {/* Conversation list */}
         <div className="flex-1 overflow-y-auto">
           {loading && <p className="p-4 text-center text-[12px] text-white/40">Loading…</p>}
           {!loading && conversations.length === 0 && (
-            <p className="p-6 text-center text-[12px] text-white/40">No conversations.</p>
+            <div className="px-4 py-10 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.04] text-white/30">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <p className="text-[12px] text-white/40">No conversations yet.</p>
+            </div>
           )}
           {conversations.map((c) => (
             <button
@@ -206,8 +229,8 @@ export default function AdminChat() {
                 activeId === c._id ? 'bg-white/[0.06]' : ''
               }`}
             >
-              <div className="relative">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#8b5cf6] text-[11px] font-semibold text-white">
+              <div className="relative shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#8b5cf6] text-[11px] font-semibold text-white">
                   {(c.guestName || 'G').slice(0, 1).toUpperCase()}
                 </div>
                 {c.online && (
@@ -218,12 +241,14 @@ export default function AdminChat() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate text-[12.5px] font-medium text-white/90">{c.guestName}</p>
                   {c.unreadByAdmin > 0 && (
-                    <span className="rounded-full bg-[#8b5cf6] px-1.5 py-0.5 text-[9px] font-bold text-white">
+                    <span className="shrink-0 rounded-full bg-[#8b5cf6] px-1.5 py-0.5 text-[9px] font-bold text-white">
                       {c.unreadByAdmin}
                     </span>
                   )}
                 </div>
-                <p className="truncate text-[10.5px] text-white/40">{c.lastMessagePreview || 'No messages'}</p>
+                <p className="truncate text-[10.5px] text-white/40">
+                  {c.lastMessagePreview || 'No messages'}
+                </p>
                 <p className="truncate text-[9.5px] text-white/25">
                   {c.guestEmail || c.guestPhone || '—'}
                 </p>
@@ -233,34 +258,59 @@ export default function AdminChat() {
         </div>
       </div>
 
-      {/* Chat panel */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+      {/* ═══ CHAT PANEL — hidden on mobile until a chat is selected ═══ */}
+      <div
+        className={`${
+          active ? 'flex' : 'hidden lg:flex'
+        } min-h-0 flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]`}
+      >
         {active ? (
           <>
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-white">{active.guestName}</p>
-                <p className="truncate text-[11px] text-white/40">
-                  {[active.guestEmail, active.guestPhone].filter(Boolean).join(' · ')}
-                </p>
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-3 py-2.5 sm:px-5 sm:py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                {/* Back (mobile only) */}
+                <button
+                  onClick={() => setActiveId(null)}
+                  className="shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.02] p-1.5 text-white/60 transition hover:text-white lg:hidden"
+                  aria-label="Back to conversations"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-white">{active.guestName}</p>
+                  <p className="truncate text-[10.5px] text-white/40 sm:text-[11px]">
+                    {[active.guestEmail, active.guestPhone].filter(Boolean).join(' · ') || 'Guest'}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 {typingBy[active._id] && (
-                  <span className="text-[10.5px] text-emerald-400">typing…</span>
+                  <span className="hidden text-[10.5px] text-emerald-400 sm:inline">typing…</span>
                 )}
                 <button
                   onClick={closeConv}
-                  className="rounded-full border border-red-500/30 px-3 py-1 text-[11px] font-medium text-red-300 hover:bg-red-500/10"
+                  className="rounded-full border border-red-500/30 px-2.5 py-1 text-[10.5px] font-medium text-red-300 transition hover:bg-red-500/10 sm:px-3 sm:text-[11px]"
                 >
-                  Close chat
+                  Close
                 </button>
               </div>
             </div>
-            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
+
+            {/* Messages */}
+            <div ref={scrollRef} className="flex-1 space-y-2.5 overflow-y-auto px-3 py-3 sm:space-y-3 sm:px-5 sm:py-4">
+              {messages.length === 0 && (
+                <p className="py-8 text-center text-[12px] text-white/30">No messages yet.</p>
+              )}
               {messages.map((m) => (
-                <div key={m._id || m.ts} className={`flex ${m.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={m._id || m.ts}
+                  className={`flex ${m.from === 'admin' ? 'justify-end' : 'justify-start'}`}
+                >
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-[13px] leading-5 ${
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[12.5px] leading-5 sm:max-w-[75%] sm:px-4 sm:py-2.5 sm:text-[13px] ${
                       m.from === 'admin'
                         ? 'bg-[#8b5cf6] text-white'
                         : m.from === 'system'
@@ -269,33 +319,58 @@ export default function AdminChat() {
                     }`}
                   >
                     {m.text}
-                    <p className={`mt-1 text-[10px] ${m.from === 'admin' ? 'text-white/50' : 'text-white/30'}`}>
+                    <p
+                      className={`mt-1 text-[9.5px] sm:text-[10px] ${
+                        m.from === 'admin' ? 'text-white/50' : 'text-white/30'
+                      }`}
+                    >
                       {new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
               ))}
+              {typingBy[active._id] && (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl bg-white/[0.06] px-3.5 py-2 text-[11.5px] text-white/50">
+                    Guest is typing…
+                  </div>
+                </div>
+              )}
             </div>
-            <form onSubmit={send} className="flex items-center gap-2 border-t border-white/[0.06] p-3">
+
+            {/* Input */}
+            <form
+              onSubmit={send}
+              className="flex items-center gap-1.5 border-t border-white/[0.06] p-2 sm:gap-2 sm:p-3"
+            >
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Reply as Alveoly Support…"
-                className="flex-1 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-[13px] text-white placeholder-white/30 outline-none focus:border-[#8b5cf6]/50"
+                className="flex-1 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-[12.5px] text-white placeholder-white/30 outline-none transition focus:border-[#8b5cf6]/50 sm:px-4 sm:text-[13px]"
               />
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="rounded-full bg-[#8b5cf6] px-5 py-2.5 text-[12.5px] font-semibold text-white transition hover:bg-[#7c3aed] disabled:opacity-40"
+                className="rounded-full bg-[#8b5cf6] px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-[#7c3aed] disabled:opacity-40 sm:px-5 sm:text-[12.5px]"
+                aria-label="Send reply"
               >
                 Send
               </button>
             </form>
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
+          /* Empty state (desktop only — hidden on mobile because the list is visible) */
+          <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.04] text-white/30">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
             <p className="text-[14px] font-medium text-white/70">Select a conversation</p>
-            <p className="mt-1 text-[12px] text-white/40">Guest conversations will appear here in real time.</p>
+            <p className="mt-1 max-w-xs text-[12px] text-white/40">
+              Guest conversations will appear here in real time.
+            </p>
           </div>
         )}
       </div>

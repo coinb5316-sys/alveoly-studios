@@ -23,21 +23,25 @@ import TranslatorGenerator from '../components/generators/TranslatorGenerator';
 import GifGenerator from '../components/generators/GifGenerator';
 import AnimationGenerator from '../components/generators/AnimationGenerator';
 import Library from '../components/studio/Library';
-import Showcase from '../components/studio/Showcase';
 
 // --- Admin Components ---
 import AdminOverview from '../components/admin/AdminOverview';
 import AdminUsers from '../components/admin/AdminUsers';
 import AdminSettings from '../components/admin/AdminSettings';
 import AdminPayments from '../components/admin/AdminPayments';
-import AdminChat from '../components/admin/AdminChat'; // NEW
+import AdminChat from '../components/admin/AdminChat';
 
 // --- UI Components ---
 import QueueDrawer from '../components/studio/QueueDrawer';
 import CommandPalette from '../components/studio/CommandPalette';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+// Strip trailing "/api" — matches all other dashboards
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL || API).replace(/\/api\/?$/, '');
 
+/* ─────────────────────────────────────────────
+   Navigation data
+   ───────────────────────────────────────────── */
 const STUDIO_NAV = [
   { to: '/admin/studio/image', label: 'Image', icon: 'image', accent: '#8b5cf6' },
   { to: '/admin/studio/image-edit', label: 'Edit Image', icon: 'edit', accent: '#06b6d4' },
@@ -63,11 +67,13 @@ const ADMIN_NAV = [
   { to: '/admin', label: 'Overview', icon: 'dashboard', exact: true },
   { to: '/admin/users', label: 'Users', icon: 'users', exact: false },
   { to: '/admin/payments', label: 'Payments', icon: 'payments', exact: false },
-  { to: '/admin/chat', label: 'Live Chat', icon: 'chat', exact: false, badgeKey: 'chat' }, // NEW
+  { to: '/admin/chat', label: 'Live Chat', icon: 'chat', exact: false, badgeKey: 'chat' },
   { to: '/admin/settings', label: 'Settings & Pricing', icon: 'settings', exact: false },
 ];
 
-// Icons
+/* ─────────────────────────────────────────────
+   Icons
+   ───────────────────────────────────────────── */
 const ICONS = {
   dashboard: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" /></svg>,
   users: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -94,25 +100,38 @@ const ICONS = {
   library: <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="6" height="16" rx="1.5"/><rect x="11" y="4" width="6" height="16" rx="1.5"/><path d="m20.5 5.5-3 15"/></svg>,
 };
 
+/* Brand mark — coral → red gradient */
+function BrandMark() {
+  return (
+    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff6b6b] to-[#dc2626] font-bold text-white shadow-lg shadow-red-900/40">
+      A
+    </div>
+  );
+}
+
+/* ═════════════════════════════════════════════
+   Admin Dashboard
+   ═════════════════════════════════════════════ */
 export default function AdminDashboard() {
   const { user, logout, token } = useAuth();
   const { activeCount } = useQueue();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeMode, setActiveMode] = useState('admin');
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [unreadChat, setUnreadChat] = useState(0); // NEW: live unread badge
 
-  // Sync the active mode based on the URL
+  const [activeMode, setActiveMode] = useState('admin');
+  const [mobileNav, setMobileNav] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [unreadChat, setUnreadChat] = useState(0);
+
+  // Sync mode from URL
   useEffect(() => {
-    if (location.pathname.startsWith('/admin/studio')) {
-      setActiveMode('studio');
-    } else {
-      setActiveMode('admin');
-    }
+    setActiveMode(location.pathname.startsWith('/admin/studio') ? 'studio' : 'admin');
   }, [location.pathname]);
 
-  // Keyboard shortcut for command palette
+  // Auto-close mobile drawer on route change
+  useEffect(() => setMobileNav(false), [location.pathname]);
+
+  // ⌘K palette
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -125,17 +144,13 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // ── Live chat unread counter ────────────────────────
-  // Lightweight socket that listens only for new guest messages
-  // and bumps the sidebar badge. Actual chat UI lives in AdminChat.
+  // Unread chat badge (lightweight socket)
   useEffect(() => {
     if (!token) return;
 
-    // Fetch initial unread count
-    fetch(
-      `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/conversations?status=open&limit=200`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
+    fetch(`${API}/api/chat/conversations?status=open&limit=200`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data?.items) return;
@@ -149,102 +164,96 @@ export default function AdminDashboard() {
       transports: ['websocket'],
     });
 
-    socket.on('admin:message:new', ({ conversationId, message }) => {
-      // Ignore messages if the admin is currently on the chat page —
-      // AdminChat marks them read immediately, so we avoid double-counting.
+    socket.on('admin:message:new', ({ message }) => {
       if (location.pathname === '/admin/chat') return;
-      if (message.from === 'user') {
-        setUnreadChat((n) => n + 1);
-      }
+      if (message.from === 'user') setUnreadChat((n) => n + 1);
     });
 
-    // Reset when the admin opens a specific conversation (AdminChat emits mark-read
-    // via REST; we refetch the count whenever the route changes into /admin/chat).
     return () => {
       socket.off();
       socket.disconnect();
     };
   }, [token, location.pathname]);
 
-  // Re-sync unread count when the chat page is entered/exited
   useEffect(() => {
-    if (!token) return;
-    if (location.pathname !== '/admin/chat') return;
-
-    // Admin is inside chat — zero the badge; AdminChat handles per-conversation reads
-    setUnreadChat(0);
-  }, [location.pathname, token]);
+    if (location.pathname === '/admin/chat') setUnreadChat(0);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  const initials = (user?.email || 'A').slice(0, 1).toUpperCase();
+
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0e0d0c] text-white">
-      {/* Ambient glows — matches user dashboard */}
+      {/* Ambient glows */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-[20%] left-[15%] h-[640px] w-[640px] rounded-full bg-[#8b5cf6] opacity-[0.08] blur-[140px]" />
         <div className="absolute -bottom-[10%] right-[5%] h-[460px] w-[460px] rounded-full bg-[#ff6b6b] opacity-[0.05] blur-[140px]" />
       </div>
 
-      {/* ═══════════════ TOPBAR ═══════════════ */}
-      <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-white/[0.05] bg-[#0e0d0c]/70 px-6 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff6b6b] to-[#dc2626] font-bold text-white shadow-lg shadow-red-900/40">
-              A
-            </div>
-            <span className="text-[14px] font-semibold text-white">
-              Alveoly <span className="font-serif-human italic text-[#ff6b6b]">Admin</span>
-            </span>
-          </div>
-
-          {/* Mode Switcher */}
-          <div className="ml-4 flex rounded-lg border border-white/10 bg-white/5 p-0.5">
+      <div className="flex h-full min-h-0 w-full">
+        {/* ═══════════ SIDEBAR (drawer on mobile) ═══════════ */}
+        <aside
+          className={`${
+            mobileNav
+              ? 'fixed inset-0 z-40 flex w-full max-w-[300px] flex-col bg-[#0e0d0c]/98 backdrop-blur-xl'
+              : 'hidden'
+          } lg:relative lg:z-auto lg:flex lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-r lg:border-white/[0.05] lg:bg-[#0e0d0c]/55 lg:backdrop-blur-xl`}
+        >
+          {/* Mobile header — brand + close */}
+          <div className="flex shrink-0 items-center justify-between px-4 pb-3 pt-5">
             <button
               onClick={() => navigate('/admin')}
-              className={`rounded-md px-3 py-1 text-[11px] font-medium transition ${
-                activeMode === 'admin' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'
-              }`}
+              className="group flex items-center gap-3 rounded-2xl p-1 text-left"
             >
-              Admin Controls
+              <BrandMark />
+              <div>
+                <p className="text-[14px] font-semibold leading-tight tracking-tight text-white">
+                  Alveoly <span className="font-serif-human italic text-[#ff6b6b]">Admin</span>
+                </p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">
+                  Control Panel
+                </p>
+              </div>
             </button>
             <button
-              onClick={() => navigate('/admin/studio/image')}
-              className={`rounded-md px-3 py-1 text-[11px] font-medium transition ${
-                activeMode === 'studio' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'
-              }`}
+              onClick={() => setMobileNav(false)}
+              className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-1.5 text-white/50 hover:text-white lg:hidden"
+              aria-label="Close menu"
             >
-              Creator Studio (Free)
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          {activeCount > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-2.5 py-1 text-[10.5px] font-medium text-[#c4b5fd]">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8b5cf6] opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#8b5cf6]" />
-              </span>
-              {activeCount} generating
+          {/* Mode switcher — shown in drawer on mobile */}
+          <div className="px-4 pb-3 lg:hidden">
+            <div className="flex rounded-lg border border-white/10 bg-white/5 p-0.5">
+              <button
+                onClick={() => navigate('/admin')}
+                className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition ${
+                  activeMode === 'admin' ? 'bg-white/10 text-white' : 'text-white/40'
+                }`}
+              >
+                Admin
+              </button>
+              <button
+                onClick={() => navigate('/admin/studio/image')}
+                className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition ${
+                  activeMode === 'studio' ? 'bg-white/10 text-white' : 'text-white/40'
+                }`}
+              >
+                Studio
+              </button>
             </div>
-          )}
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-            <span className="text-[11px] font-medium text-white/70">Admin Mode</span>
           </div>
-          <button onClick={handleLogout} className="text-[12px] font-medium text-red-400 transition hover:text-red-300">
-            Sign out
-          </button>
-        </div>
-      </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* ═══════════════ SIDEBAR ═══════════════ */}
-        <aside className="flex w-64 shrink-0 flex-col border-r border-white/[0.05] bg-[#0e0d0c]/40">
-          <nav className="min-h-0 flex-1 overflow-y-auto p-4">
+          {/* Nav */}
+          <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             {activeMode === 'admin' ? (
               <>
                 <p className="mb-2 px-3 text-[9.5px] font-semibold uppercase tracking-[0.15em] text-white/25">
@@ -260,8 +269,10 @@ export default function AdminDashboard() {
                         to={item.to}
                         end={item.exact}
                         className={({ isActive }) =>
-                          `flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition ${
-                            isActive ? 'bg-white/10 text-white' : 'text-white/50 hover:bg-white/5 hover:text-white'
+                          `flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
+                            isActive
+                              ? 'bg-white/10 text-white'
+                              : 'text-white/55 hover:bg-white/[0.04] hover:text-white/90'
                           }`
                         }
                       >
@@ -290,8 +301,10 @@ export default function AdminDashboard() {
                       key={item.to}
                       to={item.to}
                       className={({ isActive }) =>
-                        `group relative flex items-center gap-3 rounded-xl px-3 py-2 transition-all duration-200 ${
-                          isActive ? 'bg-white/[0.06] text-white' : 'text-white/55 hover:bg-white/[0.03] hover:text-white/90'
+                        `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+                          isActive
+                            ? 'bg-white/[0.06] text-white'
+                            : 'text-white/55 hover:bg-white/[0.03] hover:text-white/90'
                         }`
                       }
                     >
@@ -299,7 +312,7 @@ export default function AdminDashboard() {
                         <>
                           {isActive && (
                             <span
-                              className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full"
+                              className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
                               style={{ background: item.accent }}
                             />
                           )}
@@ -316,56 +329,155 @@ export default function AdminDashboard() {
             )}
           </nav>
 
-          {/* Sidebar Footer */}
-          <div className="shrink-0 border-t border-white/[0.05] p-4">
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-              <p className="text-[11px] font-medium text-red-300">Unlimited Access</p>
-              <p className="mt-1 text-[10px] leading-4 text-red-400/60">
-                As an admin, you can generate anything for free. No credits will be deducted.
-              </p>
+          {/* Sidebar footer — user card */}
+          <div className="shrink-0 border-t border-white/[0.05] p-3">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6b6b] to-[#dc2626] text-[12px] font-semibold text-white">
+                  {initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11.5px] font-medium text-white/90">
+                    {user?.email || 'Admin'}
+                  </p>
+                  <p className="text-[10px] text-white/35">
+                    <span className="font-semibold uppercase text-red-400">Admin</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="mt-2.5 w-full rounded-lg border border-white/[0.06] py-1.5 text-[10.5px] font-medium text-white/45 transition hover:border-red-500/30 hover:bg-red-500/[0.06] hover:text-red-300"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </aside>
 
-        {/* ═══════════════ MAIN CONTENT ═══════════════ */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1500px] px-6 py-6">
-            <Routes>
-              {/* Admin Routes */}
-              <Route index element={<AdminOverview />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="payments" element={<AdminPayments />} />
-              <Route path="chat" element={<AdminChat />} /> {/* NEW */}
-              <Route path="settings" element={<AdminSettings />} />
+        {/* Mobile backdrop */}
+        {mobileNav && (
+          <div
+            className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+            onClick={() => setMobileNav(false)}
+          />
+        )}
 
-              {/* Studio Routes (Admin gets these for free) */}
-              <Route path="studio/image" element={<ImageGenerator key="image" />} />
-              <Route path="studio/image-edit" element={<ImageEditorGenerator key="image-edit" />} />
-              <Route path="studio/video" element={<VideoGenerator key="video" />} />
-              <Route path="studio/image-to-video" element={<ImageToVideoGenerator key="image-to-video" />} />
-              <Route path="studio/video-to-video" element={<VideoToVideoGenerator key="video-to-video" />} />
-              <Route path="studio/talking-photo" element={<TalkingPhotoGenerator key="talking-photo" />} />
-              <Route path="studio/lip-sync" element={<LipSyncGenerator key="lip-sync" />} />
-              <Route path="studio/face-swap" element={<FaceSwapGenerator key="face-swap" />} />
-              <Route path="studio/subtitle" element={<SubtitleGenerator key="subtitle" />} />
-              <Route path="studio/translate" element={<TranslatorGenerator key="translate" />} />
-              <Route path="studio/gif" element={<GifGenerator key="gif" />} />
-              <Route path="studio/animation" element={<AnimationGenerator key="animation" />} />
-              <Route path="studio/background-removal" element={<BackgroundRemover key="background-removal" />} />
-              <Route path="studio/upscale" element={<UpscaleGenerator key="upscale" />} />
-              <Route path="studio/headshot" element={<HeadshotGenerator key="headshot" />} />
-              <Route path="studio/colorize" element={<PhotoColorizerGenerator key="colorize" />} />
-              <Route path="studio/audio" element={<AudioGenerator key="audio" />} />
-              <Route path="studio/library" element={<Library key="library" />} />
+        {/* ═══════════ MAIN ═══════════ */}
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {/* Topbar */}
+          <header className="shrink-0 border-b border-white/[0.05] bg-[#0e0d0c]/55 backdrop-blur-xl">
+            <div className="flex h-14 items-center justify-between px-3 sm:px-4 lg:px-6">
+              <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                {/* Hamburger (mobile) */}
+                <button
+                  onClick={() => setMobileNav(true)}
+                  className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2 text-white/60 hover:text-white lg:hidden"
+                  aria-label="Open menu"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+                  </svg>
+                </button>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/admin" replace />} />
-            </Routes>
+                {/* Brand (mobile only) */}
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex items-center gap-2 lg:hidden"
+                >
+                  <BrandMark />
+                  <span className="text-[13px] font-semibold text-white">
+                    Alveoly <span className="font-serif-human italic text-[#ff6b6b]">Admin</span>
+                  </span>
+                </button>
+
+                {/* Mode switcher (desktop only) */}
+                <div className="ml-4 hidden rounded-lg border border-white/10 bg-white/5 p-0.5 sm:flex">
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className={`rounded-md px-3 py-1 text-[11px] font-medium transition ${
+                      activeMode === 'admin'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white'
+                    }`}
+                  >
+                    Admin
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/studio/image')}
+                    className={`rounded-md px-3 py-1 text-[11px] font-medium transition ${
+                      activeMode === 'studio'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white'
+                    }`}
+                  >
+                    Studio
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                {activeCount > 0 && (
+                  <div className="hidden items-center gap-1.5 rounded-full border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-2.5 py-1 text-[10.5px] font-medium text-[#c4b5fd] sm:flex">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8b5cf6] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#8b5cf6]" />
+                    </span>
+                    {activeCount}
+                  </div>
+                )}
+                <div className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 sm:flex">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                  <span className="text-[10.5px] font-medium text-white/70">Admin</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="hidden text-[12px] font-medium text-red-400 transition hover:text-red-300 sm:block"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Content */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1500px] px-3 py-4 sm:px-4 sm:py-5 lg:px-6 lg:py-6">
+              <Routes>
+                {/* Admin */}
+                <Route index element={<AdminOverview />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="payments" element={<AdminPayments />} />
+                <Route path="chat" element={<AdminChat />} />
+                <Route path="settings" element={<AdminSettings />} />
+
+                {/* Studio */}
+                <Route path="studio/image" element={<ImageGenerator key="image" />} />
+                <Route path="studio/image-edit" element={<ImageEditorGenerator key="image-edit" />} />
+                <Route path="studio/video" element={<VideoGenerator key="video" />} />
+                <Route path="studio/image-to-video" element={<ImageToVideoGenerator key="image-to-video" />} />
+                <Route path="studio/video-to-video" element={<VideoToVideoGenerator key="video-to-video" />} />
+                <Route path="studio/talking-photo" element={<TalkingPhotoGenerator key="talking-photo" />} />
+                <Route path="studio/lip-sync" element={<LipSyncGenerator key="lip-sync" />} />
+                <Route path="studio/face-swap" element={<FaceSwapGenerator key="face-swap" />} />
+                <Route path="studio/subtitle" element={<SubtitleGenerator key="subtitle" />} />
+                <Route path="studio/translate" element={<TranslatorGenerator key="translate" />} />
+                <Route path="studio/gif" element={<GifGenerator key="gif" />} />
+                <Route path="studio/animation" element={<AnimationGenerator key="animation" />} />
+                <Route path="studio/background-removal" element={<BackgroundRemover key="background-removal" />} />
+                <Route path="studio/upscale" element={<UpscaleGenerator key="upscale" />} />
+                <Route path="studio/headshot" element={<HeadshotGenerator key="headshot" />} />
+                <Route path="studio/colorize" element={<PhotoColorizerGenerator key="colorize" />} />
+                <Route path="studio/audio" element={<AudioGenerator key="audio" />} />
+                <Route path="studio/library" element={<Library key="library" />} />
+
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </Routes>
+            </div>
           </div>
         </main>
       </div>
 
-      {/* Floating Queue & Command Palette */}
       <QueueDrawer />
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
     </div>
