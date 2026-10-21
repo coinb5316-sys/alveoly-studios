@@ -27,43 +27,20 @@ const ICONS = {
   rocket: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5',
   shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
   zap: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
-  code: 'M16 18l6-6-6-6M8 6l-6 6 6 6',
-  database: 'M12 2c5 0 9 1.34 9 3s-4 3-9 3-9-1.34-9-3 4-3 9-3zM3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6',
-  cloud: 'M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z',
-  creditCard: 'M21 4H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V6a2 2 0 00-2-2zM1 10h22',
-  layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
-  server: 'M20 9H4a2 2 0 00-2 2v8a2 2 0 002 2h16a2 2 0 002-2v-8a2 2 0 00-2-2zM4 3h16a2 2 0 012 2v2H2V5a2 2 0 012-2zM6 15h.01M6 19h.01',
   arrow: 'M5 12h14M12 5l7 7-7 7',
+  // new icons for the "how it works" + trust sections
+  pencil: 'M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z',
+  wand: 'M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5',
+  download: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3',
+  clockFast: 'M12 6v6l4 2M12 22a10 10 0 100-20 10 10 0 000 20z',
+  infinity: 'M18.178 8.178a5 5 0 010 7.071l-.354.354a5 5 0 01-7.071 0L10 14.929M5.822 15.822a5 5 0 010-7.071l.354-.354a5 5 0 017.071 0L14 9.071',
+  layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+  crown: 'M2 18h20l-2-11-5 4-3-7-3 7-5-4-2 11z',
+  badge: 'M12 15a6 6 0 100-12 6 6 0 000 12zM8.21 13.89L7 23l5-3 5 3-1.21-9.12',
 };
 
 /* ─────────────────────────────────────────────
-   Tech card (cream theme)
-   ───────────────────────────────────────────── */
-function TechCard({ icon, title, subtitle, accent }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-black/[0.07] bg-white p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/[0.12] hover:shadow-md">
-      <div
-        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-20"
-        style={{ background: accent }}
-      />
-      <div className="relative flex items-start gap-3.5">
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
-          style={{ color: accent, backgroundColor: `${accent}14` }}
-        >
-          <Icon path={icon} className="h-[18px] w-[18px]" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[13.5px] font-semibold text-[#1a1a1a]">{title}</p>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-[#6b6b6b]">{subtitle}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Value card (cream theme)
+   Value card (cream theme) — unchanged
    ───────────────────────────────────────────── */
 function ValueCard({ icon, title, body, accent }) {
   return (
@@ -81,6 +58,72 @@ function ValueCard({ icon, title, body, accent }) {
 }
 
 /* ─────────────────────────────────────────────
+   Step card (for "How it works")
+   ───────────────────────────────────────────── */
+function StepCard({ step, icon, title, body, accent, isLast }) {
+  return (
+    <div className="relative">
+      <div className="group relative overflow-hidden rounded-2xl border border-black/[0.07] bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-black/[0.12] hover:shadow-md">
+        <div
+          className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-20"
+          style={{ background: accent }}
+        />
+        <div className="relative">
+          <div className="flex items-center justify-between">
+            <span
+              className="flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+              style={{ color: accent, backgroundColor: `${accent}14` }}
+            >
+              <Icon path={icon} className="h-[18px] w-[18px]" />
+            </span>
+            <span className="font-mono text-[11px] font-semibold tracking-wider text-[#c8c0b3]">
+              STEP {String(step).padStart(2, '0')}
+            </span>
+          </div>
+          <h3 className="mt-4 text-[15px] font-semibold text-[#1a1a1a]">{title}</h3>
+          <p className="mt-2 text-[13px] leading-6 text-[#6b6b6b]">{body}</p>
+        </div>
+      </div>
+      {!isLast && (
+        <div className="pointer-events-none absolute -right-2 top-1/2 hidden -translate-y-1/2 lg:block">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5 text-[#d8d0c3]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Trust card (for "Why creators choose us")
+   ───────────────────────────────────────────── */
+function TrustCard({ icon, title, body, accent }) {
+  return (
+    <div className="group flex items-start gap-4 rounded-2xl border border-black/[0.07] bg-white p-5 transition-all duration-300 hover:border-black/[0.12] hover:shadow-md">
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+        style={{ color: accent, backgroundColor: `${accent}14` }}
+      >
+        <Icon path={icon} className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-[14px] font-semibold text-[#1a1a1a]">{title}</h3>
+        <p className="mt-1 text-[12.5px] leading-6 text-[#6b6b6b]">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Main
    ───────────────────────────────────────────── */
 export default function About() {
@@ -89,7 +132,7 @@ export default function About() {
       icon: ICONS.sparkles,
       title: 'Creativity for everyone',
       body: 'World-class AI tools shouldn’t be locked behind enterprise contracts. We keep it simple, fast, and accessible.',
-      accent: '#ff6b6b', // coral (from pricing)
+      accent: '#ff6b6b',
     },
     {
       icon: ICONS.heart,
@@ -107,17 +150,73 @@ export default function About() {
       icon: ICONS.shield,
       title: 'Your work, your data',
       body: 'You own everything you generate. No training on your content, no hidden reuse — just clean, private storage.',
-      accent: '#6b5b95', // violet (from pricing var)
+      accent: '#6b5b95',
     },
   ];
 
-  const stack = [
-    { icon: ICONS.sparkles, title: 'Magic Hour AI', subtitle: 'Video, image & audio generation', accent: '#ff6b6b' },
-    { icon: ICONS.cloud, title: 'Cloudinary', subtitle: 'Fast, global asset storage', accent: '#2a9d8f' },
-    { icon: ICONS.creditCard, title: 'Paystack', subtitle: 'Secure payments across Africa', accent: '#e07a5f' },
-    { icon: ICONS.layers, title: 'React + Vite', subtitle: 'A snappy, modern frontend', accent: '#6b5b95' },
-    { icon: ICONS.server, title: 'Node.js + Express', subtitle: 'A lean, reliable backend', accent: '#4a7c59' },
-    { icon: ICONS.database, title: 'MongoDB', subtitle: 'Flexible data at scale', accent: '#8a5a44' },
+  // "How it works" — replaces the tech stack
+  const steps = [
+    {
+      step: 1,
+      icon: ICONS.pencil,
+      title: 'Describe your idea',
+      body: 'Type a prompt, drop a reference image, or hum a melody. The studio listens — no complicated settings, no learning curve.',
+      accent: '#ff6b6b',
+    },
+    {
+      step: 2,
+      icon: ICONS.wand,
+      title: 'Watch it come to life',
+      body: 'Our studio picks the best models for your idea and generates in seconds. Images, videos, and audio — all in one place.',
+      accent: '#e07a5f',
+    },
+    {
+      step: 3,
+      icon: ICONS.download,
+      title: 'Download and share',
+      body: 'Export in full resolution, ready for social, print, or client delivery. Your work stays yours — always.',
+      accent: '#2a9d8f',
+    },
+  ];
+
+  // "Why creators choose us" — replaces the tech stack
+  const trust = [
+    {
+      icon: ICONS.zap,
+      title: 'Fast by default',
+      body: 'Generations complete in seconds, not minutes — so your creative flow never breaks.',
+      accent: '#ff6b6b',
+    },
+    {
+      icon: ICONS.infinity,
+      title: 'One studio, every model',
+      body: 'Image, video, and audio tools unified under one login. No more juggling five subscriptions.',
+      accent: '#e07a5f',
+    },
+    {
+      icon: ICONS.shield,
+      title: 'Private & secure',
+      body: 'Your prompts and creations are never used to train models, and your account is protected end-to-end.',
+      accent: '#2a9d8f',
+    },
+    {
+      icon: ICONS.crown,
+      title: 'Commercial rights',
+      body: 'On paid plans, everything you generate is yours to sell, publish, or brand — no royalties, no restrictions.',
+      accent: '#6b5b95',
+    },
+    {
+      icon: ICONS.badge,
+      title: 'Fair, transparent pricing',
+      body: 'Pay for what you use. No surprise fees, no hidden tiers — cancel anytime with one click.',
+      accent: '#4a7c59',
+    },
+    {
+      icon: ICONS.clockFast,
+      title: 'Support that answers',
+      body: 'Real humans reply within hours — not bots, not ticket queues. We’re creators too.',
+      accent: '#8a5a44',
+    },
   ];
 
   return (
@@ -173,7 +272,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── Story ── */}
+      {/* ── Story (unchanged) ── */}
       <section className="px-5 pb-16 sm:px-8">
         <div className="mx-auto max-w-3xl">
           <div className="rounded-3xl border border-black/[0.07] bg-white p-8 shadow-sm sm:p-10">
@@ -210,7 +309,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── Values ── */}
+      {/* ── Values (unchanged) ── */}
       <section className="px-5 pb-16 sm:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="mb-10 text-center">
@@ -231,34 +330,68 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── Tech stack ── */}
-      <section className="px-5 pb-20 sm:px-8">
+      {/* ═════════════════════════════════════════════
+          NEW SECTION — "How it works" (replaces tech stack)
+          ═════════════════════════════════════════════ */}
+      <section className="px-5 pb-16 sm:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-10 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Under the{' '}
-                <span className="font-serif-human italic text-[var(--coral)]">hood.</span>
-              </h2>
-              <p className="mt-2 text-[14px] text-[#6b6b6b]">
-                The tools we trust to power every generation.
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-[#6b6b6b] backdrop-blur">
-              <Icon path={ICONS.code} className="h-3 w-3" />
-              Modern, dependable stack
+          <div className="mb-10 text-center">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--coral)]">
+              From idea to outcome
             </span>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              How it{' '}
+              <span className="font-serif-human italic text-[var(--coral)]">works.</span>
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-[14px] text-[#6b6b6b]">
+              Three steps from a rough idea to something you’re proud to share.
+            </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {stack.map((s) => (
-              <TechCard key={s.title} {...s} />
+          <div className="grid gap-4 md:grid-cols-3">
+            {steps.map((s, i) => (
+              <StepCard key={s.step} {...s} isLast={i === steps.length - 1} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA (dark, matches pricing bottom block) ── */}
+      {/* ═════════════════════════════════════════════
+          NEW SECTION — "Why creators choose us"
+          ═════════════════════════════════════════════ */}
+      <section className="px-5 pb-20 sm:px-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-10 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--coral)]">
+                Why creators stay
+              </span>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                Built for the way{' '}
+                <span className="font-serif-human italic text-[var(--coral)]">
+                  you create.
+                </span>
+              </h2>
+              <p className="mt-2 max-w-md text-[14px] text-[#6b6b6b]">
+                No jargon, no fine print — just the things that matter when you’re
+                actually making something.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-wider text-[#6b6b6b] backdrop-blur">
+              <Icon path={ICONS.layers} className="h-3 w-3" />
+              One studio, everything
+            </span>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {trust.map((t) => (
+              <TrustCard key={t.title} {...t} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA (unchanged) ── */}
       <section className="px-5 pb-24 sm:px-8">
         <div className="mx-auto max-w-4xl overflow-hidden rounded-[36px] bg-[#1a1a1a] px-6 py-16 text-center text-white sm:px-12">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-medium text-white/70 backdrop-blur">
