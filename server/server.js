@@ -16,6 +16,7 @@ import uploadRoutes from './routes/upload.js';
 import assetRoutes from './routes/assetRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 // Controllers
 import { googleAuthCallback } from './controllers/authController.js';
@@ -107,6 +108,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // ── 404 catch-all ───────────────────────────────────
 app.use((req, res) => {

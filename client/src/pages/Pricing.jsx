@@ -1,16 +1,16 @@
-import { useState } from 'react';
+// pages/Pricing.jsx
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
 import useUsdToGhs from '../utils/useUsdToGhs';
+import usePlans from '../hooks/usePlans';
 
-const PLANS = [
+const BASE_PLANS = [
   {
     id: 'free',
     name: 'Free',
-    priceMonthly: 0,
-    priceYearly: 0,
     desc: 'For exploring your creativity',
     features: [
       '5 free credits on signup',
@@ -24,11 +24,8 @@ const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    priceMonthly: 19,
-    priceYearly: 15,
     desc: 'For bringing more ideas to life',
     features: [
-      '500 credits per month',
       'Priority generation queue',
       'Access to all premium tools',
       'Commercial usage rights',
@@ -40,11 +37,8 @@ const PLANS = [
   {
     id: 'enterprise',
     name: 'Enterprise',
-    priceMonthly: 99,
-    priceYearly: 79,
     desc: 'For teams and heavy usage',
     features: [
-      '5000 credits per month',
       'Highest priority queue',
       'API access',
       'Custom branding',
@@ -90,6 +84,24 @@ export default function Pricing() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const ghsRate = useUsdToGhs();
+  const { plans, loading: plansLoading } = usePlans();
+
+  const merged = useMemo(
+    () =>
+      BASE_PLANS.map((base) => {
+        const live = plans[base.id] || {};
+        const creditLine = live.credits
+          ? `${live.credits} credits per month`
+          : null;
+        return {
+          ...base,
+          monthlyUSD: live.monthlyUSD ?? 0,
+          yearlyUSD: live.yearlyUSD ?? 0,
+          features: creditLine ? [creditLine, ...base.features] : base.features,
+        };
+      }),
+    [plans]
+  );
 
   const handlePlanClick = (plan) => {
     if (plan.id === 'free') {
@@ -100,8 +112,8 @@ export default function Pricing() {
       navigate('/contact');
       return;
     }
-    // Paid plan → route through auth, then confirm modal
-    const confirmPath = `/pricing/confirm?plan=${plan.id}&billing=${billing}`;
+    const usd = billing === 'yearly' ? plan.yearlyUSD : plan.monthlyUSD;
+    const confirmPath = `/pricing/confirm?plan=${plan.id}&billing=${billing}&usd=${usd}`;
     if (!user) {
       navigate(`/login?redirect=${encodeURIComponent(confirmPath)}`);
     } else {
@@ -119,7 +131,6 @@ export default function Pricing() {
       <Navbar />
 
       <section className="mx-auto max-w-[1200px] px-5 pt-28 pb-24 sm:px-8 sm:pt-32">
-        {/* Header */}
         <div className="mb-12 text-center">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-1.5 text-[11.5px] font-medium text-[#4a4a4a] backdrop-blur">
             <span className="flex h-1.5 w-1.5 rounded-full bg-[var(--coral)] animate-pulse" />
@@ -134,7 +145,6 @@ export default function Pricing() {
           </p>
         </div>
 
-        {/* Billing toggle */}
         <div className="mb-10 flex items-center justify-center">
           <div className="inline-flex items-center rounded-full border border-black/10 bg-white p-1 shadow-sm">
             <button
@@ -163,10 +173,9 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* Plans */}
         <div className="grid gap-5 md:grid-cols-3">
-          {PLANS.map((plan) => {
-            const usd = billing === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+          {merged.map((plan) => {
+            const usd = billing === 'yearly' ? plan.yearlyUSD : plan.monthlyUSD;
             const ghs = Math.round(usd * ghsRate);
             return (
               <div
@@ -187,21 +196,27 @@ export default function Pricing() {
                 <p className="mt-1.5 text-[13px] text-[#6b6b6b]">{plan.desc}</p>
 
                 <div className="mt-7">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-[44px] font-semibold leading-none tracking-tight">
-                      ${usd}
-                    </span>
-                    {usd !== 0 && (
-                      <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">
-                        /{billing === 'yearly' ? 'mo, billed yearly' : 'month'}
-                      </span>
-                    )}
-                    {usd === 0 && <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">forever</span>}
-                  </div>
-                  {usd !== 0 && (
-                    <p className="mt-1 text-[12px] text-[#8a8a8a]">
-                      ≈ GH₵ {ghs.toLocaleString()}{billing === 'yearly' ? ' /mo' : ' /mo'}
-                    </p>
+                  {plansLoading ? (
+                    <div className="h-12 w-24 animate-pulse rounded-lg bg-black/5" />
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-[44px] font-semibold leading-none tracking-tight">
+                          ${usd}
+                        </span>
+                        {usd !== 0 && (
+                          <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">
+                            /{billing === 'yearly' ? 'mo, billed yearly' : 'month'}
+                          </span>
+                        )}
+                        {usd === 0 && <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">forever</span>}
+                      </div>
+                      {usd !== 0 && (
+                        <p className="mt-1 text-[12px] text-[#8a8a8a]">
+                          ≈ GH₵ {ghs.toLocaleString()} /mo
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -222,7 +237,8 @@ export default function Pricing() {
 
                 <button
                   onClick={() => handlePlanClick(plan)}
-                  className={`mt-8 block w-full rounded-xl py-3 text-center text-[13.5px] font-semibold transition ${
+                  disabled={plansLoading}
+                  className={`mt-8 block w-full rounded-xl py-3 text-center text-[13.5px] font-semibold transition disabled:opacity-60 ${
                     plan.highlight
                       ? 'bg-[#1a1a1a] text-white hover:bg-[#2b2b2b] hover:-translate-y-0.5'
                       : 'border border-black/10 bg-white text-[#1a1a1a] hover:border-black/20 hover:bg-black/[0.03]'
@@ -235,7 +251,6 @@ export default function Pricing() {
           })}
         </div>
 
-        {/* Trust strip */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[12.5px] text-[#6b6b6b]">
           {TRUST.map(({ label, icon }) => (
             <div key={label} className="inline-flex items-center gap-2">
@@ -245,7 +260,6 @@ export default function Pricing() {
           ))}
         </div>
 
-        {/* FAQ */}
         <div className="mt-24">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -266,7 +280,6 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* Bottom CTA */}
         <div className="mt-24 overflow-hidden rounded-[36px] bg-[#1a1a1a] px-6 py-16 text-center text-white sm:px-12">
           <h2 className="text-3xl font-semibold sm:text-4xl">
             Still deciding?{' '}

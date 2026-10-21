@@ -1,15 +1,15 @@
+// pages/Billing.jsx
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import useUsdToGhs from '../utils/useUsdToGhs';
+import usePlans from '../hooks/usePlans';
 
-const PLANS = [
+const PLAN_META = [
   {
     id: 'free',
     name: 'Free',
-    monthly: 0,
-    yearly: 0,
     desc: 'For exploring your creativity',
     features: ['5 free credits on signup', 'Access to all basic tools', 'Standard speed', 'Community support'],
     cta: 'Current plan',
@@ -18,20 +18,16 @@ const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    monthly: 19,
-    yearly: 15,
     desc: 'For bringing more ideas to life',
-    features: ['500 credits per month', 'Priority queue', 'All premium tools', 'Commercial rights', 'Email support'],
+    features: ['Priority queue', 'All premium tools', 'Commercial rights', 'Email support'],
     cta: 'Upgrade to Pro',
     highlight: true,
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
-    monthly: 99,
-    yearly: 79,
     desc: 'For teams and heavy usage',
-    features: ['5000 credits per month', 'Highest priority queue', 'API access', 'Custom branding', 'Dedicated support'],
+    features: ['Highest priority queue', 'API access', 'Custom branding', 'Dedicated support'],
     cta: 'Upgrade to Enterprise',
     highlight: false,
   },
@@ -50,6 +46,7 @@ export default function Billing() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const ghsRate = useUsdToGhs();
+  const { plans } = usePlans();
 
   const [billing, setBilling] = useState('monthly');
   const [loading, setLoading] = useState(false);
@@ -71,7 +68,6 @@ export default function Billing() {
 
   useEffect(() => { loadHistory(); }, []);
 
-  // Handle Paystack redirect
   useEffect(() => {
     const reference = searchParams.get('reference');
     if (reference && !verifyCalled.current) {
@@ -93,11 +89,17 @@ export default function Billing() {
 
   const handleUpgrade = async (plan) => {
     if (plan.id === 'free') return;
+    const live = plans[plan.id] || {};
+    const usd = billing === 'yearly' ? live.yearlyUSD : live.monthlyUSD;
+    if (!usd) {
+      alert('This plan is not currently available. Please contact support.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.post('/payment/initialize', {
         plan: plan.id,
-        amountUSD: billing === 'yearly' ? plan.yearly : plan.monthly,
+        amountUSD: usd,
         billing,
       });
       window.location.href = res.data.authorization_url;
@@ -131,7 +133,6 @@ Thank you for your business!
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
-      {/* ═══ SUCCESS MODAL ═══ */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl border border-emerald-500/25 bg-[#0e0d0c] p-7 text-center shadow-2xl">
@@ -154,7 +155,6 @@ Thank you for your business!
         </div>
       )}
 
-      {/* ═══ HEADER ═══ */}
       <div className="mb-8 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-3.5 py-1.5 text-[10.5px] font-medium uppercase tracking-wider text-white/60">
           <span className="flex h-1.5 w-1.5 rounded-full bg-[#ff6b6b] animate-pulse" />
@@ -169,7 +169,6 @@ Thank you for your business!
         </p>
       </div>
 
-      {/* ═══ Billing toggle ═══ */}
       <div className="mb-8 flex items-center justify-center">
         <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] p-1">
           <button
@@ -198,12 +197,14 @@ Thank you for your business!
         </div>
       </div>
 
-      {/* ═══ Plans ═══ */}
       <div className="grid gap-4 md:grid-cols-3">
-        {PLANS.map((plan) => {
-          const usd = billing === 'yearly' ? plan.yearly : plan.monthly;
-          const ghs = Math.round(usd * ghsRate);
+        {PLAN_META.map((plan) => {
+          const live = plans[plan.id] || {};
+          const usd = billing === 'yearly' ? live.yearlyUSD : live.monthlyUSD;
+          const ghs = Math.round((usd || 0) * ghsRate);
           const isCurrent = (user?.plan || 'free') === plan.id;
+          const creditLine = live.credits ? `${live.credits} credits per month` : null;
+          const features = creditLine ? [creditLine, ...plan.features] : plan.features;
           return (
             <div
               key={plan.id}
@@ -230,24 +231,22 @@ Thank you for your business!
               <div className="mt-6">
                 <div className="flex items-baseline gap-1">
                   <span className="text-[38px] font-semibold leading-none tracking-tight text-white">
-                    ${usd}
+                    ${usd ?? 0}
                   </span>
-                  {usd !== 0 && (
+                  {(usd ?? 0) !== 0 && (
                     <span className="ml-1 text-[12px] text-white/45">
                       /{billing === 'yearly' ? 'mo, billed yearly' : 'month'}
                     </span>
                   )}
-                  {usd === 0 && <span className="ml-1 text-[12px] text-white/45">forever</span>}
+                  {(usd ?? 0) === 0 && <span className="ml-1 text-[12px] text-white/45">forever</span>}
                 </div>
-                {usd !== 0 && (
-                  <p className="mt-1 text-[11.5px] text-white/40">
-                    ≈ GH₵ {ghs.toLocaleString()} /mo
-                  </p>
+                {(usd ?? 0) !== 0 && (
+                  <p className="mt-1 text-[11.5px] text-white/40">≈ GH₵ {ghs.toLocaleString()} /mo</p>
                 )}
               </div>
 
               <ul className="mt-6 space-y-2.5 text-[12.5px] text-white/70">
-                {plan.features.map((f) => (
+                {features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5">
                     <span
                       className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
@@ -263,7 +262,7 @@ Thank you for your business!
 
               <button
                 onClick={() => handleUpgrade(plan)}
-                disabled={isCurrent || loading}
+                disabled={isCurrent || loading || !usd}
                 className={`mt-7 w-full rounded-xl py-2.5 text-[12.5px] font-semibold transition ${
                   isCurrent
                     ? 'cursor-not-allowed bg-white/[0.04] text-white/30'
@@ -279,7 +278,6 @@ Thank you for your business!
         })}
       </div>
 
-      {/* ═══ TRUST STRIP ═══ */}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11.5px] text-white/40">
         <span className="inline-flex items-center gap-1.5">
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#10b981]" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -295,7 +293,6 @@ Thank you for your business!
         </span>
       </div>
 
-      {/* ═══ PAYMENT HISTORY ═══ */}
       <div className="mt-14">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[15px] font-semibold text-white">Payment history</h2>
@@ -315,7 +312,6 @@ Thank you for your business!
           </div>
         ) : (
           <>
-            {/* Desktop table */}
             <div className="hidden overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] md:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-left text-[12.5px] text-white/70">
@@ -352,7 +348,6 @@ Thank you for your business!
               </div>
             </div>
 
-            {/* Mobile cards */}
             <div className="space-y-3 md:hidden">
               {history.map((tx) => (
                 <div key={tx._id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
