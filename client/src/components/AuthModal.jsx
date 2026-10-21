@@ -1,3 +1,4 @@
+// components/AuthModal.jsx
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
@@ -38,13 +39,11 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [slide, setSlide] = useState(0);
 
-  // Refs
   const hasProcessedOAuth = useRef(false);
   const onCloseRef = useRef(onClose);
   const loginRef = useRef(login);
   const navigateRef = useRef(navigate);
 
-  // Keep refs current without re-triggering effects
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
@@ -55,7 +54,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     navigateRef.current = navigate;
   }, [navigate]);
 
-  // Safe close helper
   const safeClose = useCallback(() => {
     if (typeof onCloseRef.current === 'function') {
       try {
@@ -66,7 +64,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     }
   }, []);
 
-  // Safe login helper
   const safeLogin = useCallback((user, token) => {
     if (typeof loginRef.current !== 'function') {
       console.error('login is not a function in AuthModal:', loginRef.current);
@@ -75,7 +72,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     return loginRef.current(user, token);
   }, []);
 
-  // Safe navigate helper
   const safeNavigate = useCallback((path, opts) => {
     if (typeof navigateRef.current !== 'function') {
       console.error('navigate is not a function in AuthModal:', navigateRef.current);
@@ -83,6 +79,12 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     }
     return navigateRef.current(path, opts);
   }, []);
+
+  // Where to go after a successful login/register/oauth
+  const resolveRedirect = useCallback(() => {
+    const redirect = searchParams.get('redirect');
+    return redirect || '/dashboard';
+  }, [searchParams]);
 
   const slides =
     mode === 'login'
@@ -117,12 +119,12 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
       try {
         safeLogin(userData, token);
         safeClose();
-        safeNavigate('/dashboard', { replace: true });
+        safeNavigate(resolveRedirect(), { replace: true });
       } catch (e) {
         setError(e.message || 'Google login failed. Please try again.');
       }
     }
-  }, [searchParams, safeClose, safeLogin, safeNavigate]);
+  }, [searchParams, safeClose, safeLogin, safeNavigate, resolveRedirect]);
 
   // Auto-advance the slider
   useEffect(() => {
@@ -133,12 +135,10 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Reset slide on mode change
   useEffect(() => {
     setSlide(0);
   }, [mode]);
 
-  // Reset form state on mode change
   useEffect(() => {
     setStep('email');
     setEmail('');
@@ -210,7 +210,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
 
       safeLogin(res.data.user, res.data.token);
       safeClose();
-      safeNavigate('/dashboard');
+      safeNavigate(resolveRedirect(), { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -255,8 +255,7 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const openForgot = () => onSwitchMode('forgot');
 
   const handleGoogleClick = () => {
-    const apiUrl =
-      import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const baseUrl = apiUrl.replace(/\/api\/?$/, '');
     const route = mode === 'register' ? '/auth/google/register' : '/auth/google';
     window.location.assign(`${baseUrl}${route}`);

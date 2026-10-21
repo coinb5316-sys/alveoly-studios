@@ -35,29 +35,29 @@ export default function PricingConfirm() {
         amountUSD: usd,
         billing,
       });
+      if (!res.data?.authorization_url) {
+        throw new Error('Paystack did not return a checkout URL. Please try again.');
+      }
       window.location.href = res.data.authorization_url;
     } catch (err) {
-      setError(err.response?.data?.error || 'Could not start checkout. Please try again.');
+      setError(err.response?.data?.error || err.message || 'Could not start checkout. Please try again.');
       setLoading(false);
     }
   };
 
   return (
     <main className="page-scroll relative flex min-h-screen items-center justify-center bg-[#fdfbf7] px-4 py-10 text-[#1a1a1a]">
-      {/* Ambient glows */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-[10%] left-[20%] h-[500px] w-[500px] rounded-full bg-[var(--coral)] opacity-[0.08] blur-[130px]" />
         <div className="absolute top-[45%] right-[10%] h-[420px] w-[420px] rounded-full bg-[var(--violet)] opacity-[0.06] blur-[130px]" />
       </div>
 
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         onClick={dismiss}
         aria-hidden="true"
       />
 
-      {/* Modal */}
       <div
         role="dialog"
         aria-modal="true"
@@ -93,7 +93,6 @@ export default function PricingConfirm() {
             </p>
           )}
 
-          {/* Price block */}
           <div className="mt-6 rounded-2xl border border-black/[0.06] bg-[#fdfbf7] p-5">
             <div className="flex items-baseline justify-between gap-3">
               <div>
@@ -103,7 +102,7 @@ export default function PricingConfirm() {
                 <p className="mt-1 text-[32px] font-semibold leading-none tracking-tight">
                   ${usd}
                   <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">
-                    USD / {billing === 'yearly' ? 'mo' : 'mo'}
+                    USD / mo
                   </span>
                 </p>
               </div>
@@ -112,15 +111,20 @@ export default function PricingConfirm() {
                   You&apos;ll pay
                 </p>
                 <p className="mt-1 text-[18px] font-semibold text-[var(--coral)]">
-                  ≈ GH₵ {ghs.toLocaleString()}
+                  GH₵ {ghs.toLocaleString()}
                 </p>
-                <p className="text-[10.5px] text-[#8a8a8a]">at current exchange rate</p>
+                <p className="text-[10.5px] text-[#8a8a8a]">at rate GH₵{ghsRate}/$</p>
               </div>
             </div>
             {billing === 'yearly' && (
               <p className="mt-3 border-t border-black/[0.06] pt-3 text-[11.5px] text-[#6b6b6b]">
-                Total charge today: <span className="font-medium text-[#1a1a1a]">${usd * 12} USD</span>{' '}
-                <span className="text-[#8a8a8a]">(≈ GH₵ {(usd * 12 * ghsRate).toLocaleString()})</span>
+                Charged today:{' '}
+                <span className="font-medium text-[#1a1a1a]">
+                  GH₵ {Math.round(usd * 12 * ghsRate).toLocaleString()}
+                </span>{' '}
+                <span className="text-[#8a8a8a]">
+                  (${usd * 12} USD)
+                </span>
               </p>
             )}
           </div>

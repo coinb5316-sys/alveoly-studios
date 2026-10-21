@@ -1,21 +1,45 @@
+// server/controllers/paymentController.js
 import axios from 'axios';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
+import { getUsdToGhsRate } from '../config/payment.js';
 
-const USD_TO_GHS_RATE = 15.00; 
+/* ─────────────────────────────────────────────
+   PUBLIC: Expose the USD → GHS rate
+   The frontend hook hits this so every price
+   in the UI matches what Paystack will charge.
+   ───────────────────────────────────────────── */
+export const getRate = (_req, res) => {
+  res.json({
+    rate: getUsdToGhsRate(),
+    base: 'USD',
+    quote: 'GHS',
+    updatedAt: new Date().toISOString(),
+  });
+};
 
+/* ─────────────────────────────────────────────
+   Initialize a Paystack transaction
+   ───────────────────────────────────────────── */
 export const initializePayment = async (req, res) => {
   try {
-    const { plan, amountUSD } = req.body;
+    const { plan, amountUSD, billing = 'monthly' } = req.body;
 
-    if (!plan || !amountUSD) {
+    if (!plan || amountUSD == null) {
       return res.status(400).json({ error: 'Plan and amountUSD are required' });
     }
 
-    const user = await User.findById(req.user.id);
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authorized' });
+    }
+
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const amountGHS = amountUSD * USD_TO_GHS_RATE;
+    // Use the same rate the UI displays
+    const rate = getUsdToGhsRate();
+    const amountGHS = Number(amountUSD) * rate;
     const amountInPesewas = Math.round(amountGHS * 100);
 
     const response = await axios.post(
@@ -25,29 +49,38 @@ export const initializePayment = async (req, res) => {
         amount: amountInPesewas,
         currency: 'GHS',
         callback_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard/billing?verify=true`,
-        metadata: { 
-          plan: plan, 
+        metadata: {
+          plan,
+          billing,
           userId: user._id.toString(),
-          amountUSD: amountUSD 
+          amountUSD: Number(amountUSD),
+          rate,
         },
       },
-      { 
-        headers: { 
+      {
+        headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          'Content-Type': 'application/json'
-        } 
+          'Content-Type': 'application/json',
+        },
       }
     );
 
-    res.json({ authorization_url: response.data.data.authorization_url });
+    res.json({
+      authorization_url: response.data.data.authorization_url,
+      amountGHS,
+      rate,
+    });
   } catch (err) {
     console.error('Paystack init error:', err.response?.data || err.message);
-    res.status(500).json({ 
-      error: err.response?.data?.message || 'Failed to initialize payment' 
+    res.status(500).json({
+      error: err.response?.data?.message || 'Failed to initialize payment',
     });
   }
 };
 
+/* ─────────────────────────────────────────────
+   Verify a Paystack transaction
+   ───────────────────────────────────────────── */
 export const verifyPayment = async (req, res) => {
   try {
     const { reference } = req.body;
@@ -55,68 +88,79 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ error: 'Payment reference is required' });
     }
 
-    // 1. IDEMPOTENCY CHECK: Has this reference already been processed?
+    // Idempotency — already processed?
     const existingTx = await Transaction.findOne({ reference });
     if (existingTx) {
-      return res.json({ 
-        success: true, 
-        message: 'Payment already processed', 
-        creditsAdded: existingTx.creditsAdded 
+      return res.json({
+        success: true,
+        message: 'Payment already processed',
+        creditsAdded: existingTx.creditsAdded,
       });
     }
 
-    // 2. Verify with Paystack
     const response = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       { headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` } }
     );
 
     const data = response.data.data;
-    
+
     if (data.status === 'success') {
-      const { plan, userId, amountUSD } = data.metadata;
-      
+      const { plan, userId, amountUSD, billing = 'monthly' } = data.metadata || {};
+
       let creditsToAdd = 50;
       if (plan === 'pro') creditsToAdd = 500;
       if (plan === 'enterprise') creditsToAdd = 5000;
 
-      // 3. Create the transaction record FIRST (to lock the reference)
+      // Record the transaction FIRST so a duplicate verify can't double-charge
       await Transaction.create({
         userId,
         reference,
         plan,
+        billing,
         amountUSD: Number(amountUSD),
-        amountGHS: data.amount / 100,
+        amountGHS: data.amount / 100, // exact amount Paystack charged
         creditsAdded: creditsToAdd,
         status: 'success',
       });
 
-      // 4. Update the user's plan and credits
-      await User.findByIdAndUpdate(userId, { 
+      await User.findByIdAndUpdate(userId, {
         $inc: { credits: creditsToAdd },
-        $set: { plan: plan }
+        $set: { plan },
       });
 
       return res.json({ success: true, creditsAdded: creditsToAdd });
     }
 
-    res.status(400).json({ error: `Payment was not successful (Status: ${data.status})` });
+    res.status(400).json({
+      error: `Payment was not successful (Status: ${data.status})`,
+    });
   } catch (err) {
     console.error('Paystack verify error:', err.response?.data || err.message);
-    res.status(500).json({ 
-      error: err.response?.data?.message || 'Payment verification failed' 
+    res.status(500).json({
+      error: err.response?.data?.message || 'Payment verification failed',
     });
   }
 };
 
-// NEW: Fetch payment history for the user
+/* ─────────────────────────────────────────────
+   Payment history for the logged-in user
+   ───────────────────────────────────────────── */
 export const getPaymentHistory = async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.user.id, status: 'success' })
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) return res.status(401).json({ error: 'Not authorized' });
+
+    const transactions = await Transaction.find({
+      userId,
+      status: 'success',
+    })
       .sort({ createdAt: -1 })
       .lean();
+
     res.json({ transactions });
   } catch (err) {
+    console.error('[getPaymentHistory]', err);
     res.status(500).json({ error: 'Failed to fetch payment history' });
   }
 };

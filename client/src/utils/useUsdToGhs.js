@@ -1,15 +1,21 @@
 // utils/useUsdToGhs.js
 import { useEffect, useState } from 'react';
 
-const FALLBACK_RATE = 15.5; // reasonable default; overridden when live rate loads
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+
+// Must equal server/config/payment.js → USD_TO_GHS_RATE
+const FALLBACK_RATE = 15.0;
+
 const CACHE_KEY = 'alveoly:usd-ghs';
-const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
+const CACHE_TTL_MS = 1000 * 60 * 30; // 30 min
 
 export default function useUsdToGhs() {
   const [rate, setRate] = useState(() => {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-      if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.rate;
+      if (cached && Date.now() - cached.ts < CACHE_TTL_MS && typeof cached.rate === 'number') {
+        return cached.rate;
+      }
     } catch {}
     return FALLBACK_RATE;
   });
@@ -18,18 +24,18 @@ export default function useUsdToGhs() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        const res = await fetch(`${API}/api/payment/rate`);
         if (!res.ok) return;
         const data = await res.json();
-        const ghs = data?.rates?.GHS;
-        if (typeof ghs === 'number' && ghs > 0 && !cancelled) {
-          setRate(ghs);
+        const value = Number(data?.rate);
+        if (!cancelled && Number.isFinite(value) && value > 0) {
+          setRate(value);
           try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ rate: ghs, ts: Date.now() }));
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ rate: value, ts: Date.now() }));
           } catch {}
         }
       } catch {
-        // keep fallback silently
+        // silent — fallback stays
       }
     })();
     return () => {
