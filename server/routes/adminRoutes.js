@@ -17,6 +17,7 @@ import {
   sendNotification,
   getMagicHourBalance,
   getUserCreditUsage,
+  getOverview,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -49,5 +50,9 @@ router.post('/notifications', sendNotification);
 router.get('/magic-hour/balance', getMagicHourBalance);
 
 router.get('/usage', getUserCreditUsage);
+
+
+// Add the route
+router.get('/overview', getOverview); // ← NEW
 
 export default router;

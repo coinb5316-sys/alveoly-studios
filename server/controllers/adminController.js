@@ -318,3 +318,135 @@ export const getUserCreditUsage = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// ── 8. CONSOLIDATED OVERVIEW ──
+// One endpoint that feeds the entire AdminOverview dashboard.
+export const getOverview = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    // ── KPI cards ──
+    const [
+      totalUsers,
+      totalAssets,
+      assetsToday,
+      txAgg,
+      activeToday,
+      newUsersThisMonth,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Asset.countDocuments(),
+      Asset.countDocuments({ createdAt: { $gte: startOfDay } }),
+      Transaction.aggregate([
+        { $match: { status: 'success' } },
+        { $group: { _id: null, total: { $sum: '$amountUSD' }, count: { $sum: 1 } } },
+      ]),
+      Asset.distinct('userId', { createdAt: { $gte: startOfDay } }),
+      User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+    ]);
+
+    const totalRevenue = txAgg[0]?.total || 0;
+    const totalTransactions = txAgg[0]?.count || 0;
+
+    // ── 7-day generation timeseries ──
+    const dailyAgg = await Asset.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          count: { $sum: 1 },
+          credits: { $sum: { $ifNull: ['$creditsCost', 0] } },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Fill gaps so the chart always has 7 entries
+    const days = [];
+    const dayMap = new Map(dailyAgg.map((d) => [d._id, d]));
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const hit = dayMap.get(key);
+      days.push({
+        date: key,
+        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        count: hit?.count || 0,
+        credits: hit?.credits || 0,
+      });
+    }
+
+    // ── Asset type breakdown ──
+    const typeAgg = await Asset.aggregate([
+      { $group: { _id: '$type', count: { $sum: 1 } } },
+    ]);
+    const typeBreakdown = { image: 0, video: 0, audio: 0 };
+    typeAgg.forEach((r) => {
+      if (r._id in typeBreakdown) typeBreakdown[r._id] = r.count;
+    });
+
+    // ── Plan distribution ──
+    const planAgg = await User.aggregate([
+      { $group: { _id: { $ifNull: ['$plan', 'free'] }, count: { $sum: 1 } } },
+    ]);
+    const planDistribution = { free: 0, pro: 0, enterprise: 0 };
+    planAgg.forEach((r) => {
+      const id = r._id || 'free';
+      if (id in planDistribution) planDistribution[id] = r.count;
+    });
+
+    // ── Recent signups (last 5) ──
+    const recentUsers = await User.find()
+      .select('email plan credits createdAt')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    // ── Recent transactions (last 5) ──
+    const recentTransactions = await Transaction.find({ status: 'success' })
+      .populate('userId', 'email')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    // ── Live chat stats ──
+    const openChats = await Asset.db
+      .collection('chatconversations')
+      .countDocuments({ status: 'open' })
+      .catch(() => 0);
+
+    res.json({
+      kpis: {
+        totalUsers,
+        totalAssets,
+        assetsToday,
+        activeToday: activeToday.length,
+        totalRevenue,
+        totalTransactions,
+        newUsersThisMonth,
+      },
+      dailyGeneration: days,
+      typeBreakdown,
+      planDistribution,
+      recentUsers,
+      recentTransactions,
+      openChats,
+    });
+  } catch (err) {
+    console.error('[getOverview] FULL ERROR:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
