@@ -1,13 +1,19 @@
 // pages/PricingConfirm.jsx
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import useUsdToGhs from '../utils/useUsdToGhs';
+import usePlans from '../hooks/usePlans';
 
-const PLAN_META = {
-  pro: { name: 'Pro', monthly: 19, yearly: 15 },
-  enterprise: { name: 'Enterprise', monthly: 99, yearly: 79 },
+const PLAN_NAMES = {
+  pro: 'Pro',
+  enterprise: 'Enterprise',
+};
+
+const PLAN_FEATURES = {
+  pro: ['500 credits per month', 'Priority queue', 'All premium tools'],
+  enterprise: ['5000 credits per month', 'Highest priority queue', 'API access'],
 };
 
 export default function PricingConfirm() {
@@ -15,18 +21,35 @@ export default function PricingConfirm() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const ghsRate = useUsdToGhs();
+  const { plans, loading: plansLoading } = usePlans();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const planId = (searchParams.get('plan') || 'pro').toLowerCase();
   const billing = (searchParams.get('billing') || 'monthly').toLowerCase();
-  const meta = PLAN_META[planId] || PLAN_META.pro;
-  const usd = billing === 'yearly' ? meta.yearly : meta.monthly;
+  const usdFromQuery = Number(searchParams.get('usd'));
+
+  // Resolve price: URL param → live plan → 0
+  const livePlan = plans[planId] || {};
+  const livePrice = billing === 'yearly' ? livePlan.yearlyUSD : livePlan.monthlyUSD;
+  const usd =
+    Number.isFinite(usdFromQuery) && usdFromQuery > 0
+      ? usdFromQuery
+      : Number.isFinite(livePrice) && livePrice > 0
+      ? livePrice
+      : 0;
   const ghs = Math.round(usd * ghsRate);
+  const planName = PLAN_NAMES[planId] || 'Pro';
+  const features = PLAN_FEATURES[planId] || PLAN_FEATURES.pro;
+
+  // If plans finished loading and the price is still 0, something is wrong
+  const priceUnavailable = !plansLoading && usd <= 0;
 
   const dismiss = () => navigate('/pricing', { replace: true });
 
   const subscribe = async () => {
+    if (usd <= 0) return;
     setLoading(true);
     setError('');
     try {
@@ -40,10 +63,28 @@ export default function PricingConfirm() {
       }
       window.location.href = res.data.authorization_url;
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Could not start checkout. Please try again.');
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          'Could not start checkout. Please try again.'
+      );
       setLoading(false);
     }
   };
+
+  // Escape to dismiss
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') dismiss();
+    };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="page-scroll relative flex min-h-screen items-center justify-center bg-[#fdfbf7] px-4 py-10 text-[#1a1a1a]">
@@ -84,7 +125,7 @@ export default function PricingConfirm() {
 
           <h1 className="text-[26px] font-semibold leading-tight tracking-tight">
             You&apos;re subscribing to{' '}
-            <span className="font-serif-human italic text-[var(--coral)]">{meta.name}.</span>
+            <span className="font-serif-human italic text-[var(--coral)]">{planName}.</span>
           </h1>
 
           {user?.email && (
@@ -93,50 +134,67 @@ export default function PricingConfirm() {
             </p>
           )}
 
+          {/* Price block — live from admin settings */}
           <div className="mt-6 rounded-2xl border border-black/[0.06] bg-[#fdfbf7] p-5">
-            <div className="flex items-baseline justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-[#8a8a8a]">
-                  {billing === 'yearly' ? 'Billed yearly' : 'Billed monthly'}
-                </p>
-                <p className="mt-1 text-[32px] font-semibold leading-none tracking-tight">
-                  ${usd}
-                  <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">
-                    USD / mo
-                  </span>
-                </p>
+            {plansLoading && usd === 0 ? (
+              <div className="space-y-2">
+                <div className="h-3 w-24 animate-pulse rounded bg-black/[0.06]" />
+                <div className="h-8 w-32 animate-pulse rounded bg-black/[0.06]" />
               </div>
-              <div className="text-right">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-[#8a8a8a]">
-                  You&apos;ll pay
-                </p>
-                <p className="mt-1 text-[18px] font-semibold text-[var(--coral)]">
-                  GH₵ {ghs.toLocaleString()}
-                </p>
-                <p className="text-[10.5px] text-[#8a8a8a]">at rate GH₵{ghsRate}/$</p>
+            ) : priceUnavailable ? (
+              <div className="rounded-lg border border-amber-400/30 bg-amber-500/5 px-3 py-2 text-[12px] text-amber-700">
+                This plan is not currently available. Please contact support.
               </div>
-            </div>
-            {billing === 'yearly' && (
-              <p className="mt-3 border-t border-black/[0.06] pt-3 text-[11.5px] text-[#6b6b6b]">
-                Charged today:{' '}
-                <span className="font-medium text-[#1a1a1a]">
-                  GH₵ {Math.round(usd * 12 * ghsRate).toLocaleString()}
-                </span>{' '}
-                <span className="text-[#8a8a8a]">
-                  (${usd * 12} USD)
-                </span>
-              </p>
+            ) : (
+              <>
+                <div className="flex items-baseline justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-[#8a8a8a]">
+                      {billing === 'yearly' ? 'Billed yearly' : 'Billed monthly'}
+                    </p>
+                    <p className="mt-1 text-[32px] font-semibold leading-none tracking-tight">
+                      ${usd}
+                      <span className="ml-1 text-[13px] font-normal text-[#6b6b6b]">
+                        USD / mo
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-[#8a8a8a]">
+                      You&apos;ll pay
+                    </p>
+                    <p className="mt-1 text-[18px] font-semibold text-[var(--coral)]">
+                      GH₵ {ghs.toLocaleString()}
+                    </p>
+                    <p className="text-[10.5px] text-[#8a8a8a]">at rate GH₵{ghsRate}/$</p>
+                  </div>
+                </div>
+                {billing === 'yearly' && (
+                  <p className="mt-3 border-t border-black/[0.06] pt-3 text-[11.5px] text-[#6b6b6b]">
+                    Charged today:{' '}
+                    <span className="font-medium text-[#1a1a1a]">
+                      GH₵ {Math.round(usd * 12 * ghsRate).toLocaleString()}
+                    </span>{' '}
+                    <span className="text-[#8a8a8a]">(${usd * 12} USD)</span>
+                  </p>
+                )}
+              </>
             )}
           </div>
 
+          {/* Features — from admin credits count */}
           <ul className="mt-5 space-y-2 text-[12.5px] text-[#4a4a4a]">
-            {[
-              'Cancel anytime from your dashboard',
-              'Instant access to premium tools',
-              'Secure checkout via Paystack',
-            ].map((line) => (
+            {features.map((line) => (
               <li key={line} className="flex items-start gap-2">
-                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-[var(--coral)]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="mt-0.5 h-4 w-4 shrink-0 text-[var(--coral)]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M5 13l4 4L19 7" />
                 </svg>
                 {line}
@@ -145,17 +203,24 @@ export default function PricingConfirm() {
           </ul>
 
           {error && (
-            <div role="alert" className="mt-4 rounded-lg border border-red-400/30 bg-red-500/5 px-3 py-2 text-[12px] text-red-600">
+            <div
+              role="alert"
+              className="mt-4 rounded-lg border border-red-400/30 bg-red-500/5 px-3 py-2 text-[12px] text-red-600"
+            >
               {error}
             </div>
           )}
 
           <button
             onClick={subscribe}
-            disabled={loading}
+            disabled={loading || priceUnavailable || plansLoading}
             className="mt-6 w-full rounded-xl bg-[#1a1a1a] py-3.5 text-[13.5px] font-semibold text-white transition hover:bg-[#2b2b2b] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? 'Redirecting to Paystack…' : `Subscribe — Pay GH₵ ${ghs.toLocaleString()}`}
+            {loading
+              ? 'Redirecting to Paystack…'
+              : priceUnavailable
+              ? 'Plan unavailable'
+              : `Subscribe — Pay GH₵ ${ghs.toLocaleString()}`}
           </button>
 
           <button
@@ -166,7 +231,8 @@ export default function PricingConfirm() {
           </button>
 
           <p className="mt-3 text-center text-[10.5px] leading-4 text-[#8a8a8a]">
-            You&apos;ll be redirected to Paystack to complete payment. Your card details never touch our servers.
+            You&apos;ll be redirected to Paystack to complete payment. Your card
+            details never touch our servers.
           </p>
         </div>
       </div>
