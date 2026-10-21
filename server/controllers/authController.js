@@ -1,3 +1,4 @@
+// controllers/authController.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
@@ -54,23 +55,33 @@ export const getMe = async (req, res) => {
   }
 };
 
-// Add this to the bottom of your existing authController.js
+/**
+ * Google OAuth callback.
+ * `req.user` is set by Passport's Google strategy.
+ * `req.query.state` carries the `redirect` value we passed to the
+ * /auth/google start endpoint (Google echoes it back verbatim).
+ */
 export const googleAuthCallback = (req, res) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
   try {
-    // req.user is set by the Passport Google Strategy
     const { _id, email, credits, role } = req.user;
     const token = generateToken(_id);
 
-    // Redirect back to the frontend with the token
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    
-    // We pass the user data as query params so the frontend can hydrate AuthContext
-    res.redirect(
-      `${frontendUrl}/login?token=${token}&email=${encodeURIComponent(email)}&credits=${credits}&role=${role}`
-    );
+    // Redirect target that survived the OAuth round-trip
+    const redirect = req.query.state || '';
+
+    const params = new URLSearchParams({
+      token,
+      email: email || '',
+      credits: String(credits ?? 0),
+      role: role || 'user',
+    });
+    if (redirect) params.set('redirect', redirect);
+
+    res.redirect(`${frontendUrl}/login?${params.toString()}`);
   } catch (err) {
     console.error('Google callback error:', err);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/login?error=GoogleAuthFailed`);
   }
 };

@@ -80,7 +80,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     return navigateRef.current(path, opts);
   }, []);
 
-  // Where to go after a successful login/register/oauth
   const resolveRedirect = useCallback(() => {
     const redirect = searchParams.get('redirect');
     return redirect || '/dashboard';
@@ -148,7 +147,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     setNotice('');
   }, [mode]);
 
-  // Lock page scroll while modal is open
   useEffect(() => {
     const scroller = document.querySelector('.page-scroll');
     if (!scroller) return undefined;
@@ -159,7 +157,6 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
     };
   }, []);
 
-  // Close on Escape
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') safeClose();
@@ -254,11 +251,18 @@ const AuthModal = ({ mode, onSwitchMode, onClose }) => {
   const switchToRegister = () => onSwitchMode('register');
   const openForgot = () => onSwitchMode('forgot');
 
+  /**
+   * Start Google OAuth.
+   * Passes the current `?redirect=` value as `?redirect=` on the backend
+   * start URL so it survives the round-trip to Google and back.
+   */
   const handleGoogleClick = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const baseUrl = apiUrl.replace(/\/api\/?$/, '');
     const route = mode === 'register' ? '/auth/google/register' : '/auth/google';
-    window.location.assign(`${baseUrl}${route}`);
+    const redirect = searchParams.get('redirect') || '';
+    const qs = redirect ? `?redirect=${encodeURIComponent(redirect)}` : '';
+    window.location.assign(`${baseUrl}${route}${qs}`);
   };
 
   const heading =

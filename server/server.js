@@ -35,14 +35,13 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://alveolystudios.site',
   'https://www.alveolystudios.site',
-    'https://alveoly-client.pages.dev',
+  'https://alveoly-client.pages.dev',
   process.env.FRONTEND_URL,
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
 app.use(cors({
   origin(origin, cb) {
-    // Allow curl / server-to-server (no Origin header)
     if (!origin) return cb(null, true);
     if (allowedOrigins.includes(origin)) return cb(null, true);
     return cb(new Error(`CORS blocked: ${origin}`));
@@ -54,10 +53,16 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ── Google OAuth (login) ────────────────────────────
-app.get(
-  '/auth/google',
-  passport.authenticate('google-login', { scope: ['profile', 'email'] })
-);
+// We wrap passport.authenticate in a handler so we can pass
+// `state` = ?redirect=… through Google and back to the callback.
+app.get('/auth/google', (req, res, next) => {
+  const redirect = req.query.redirect || '';
+  passport.authenticate('google-login', {
+    scope: ['profile', 'email'],
+    state: redirect,
+  })(req, res, next);
+});
+
 app.get(
   '/auth/google/callback',
   passport.authenticate('google-login', {
@@ -68,10 +73,14 @@ app.get(
 );
 
 // ── Google OAuth (register) ─────────────────────────
-app.get(
-  '/auth/google/register',
-  passport.authenticate('google-register', { scope: ['profile', 'email'] })
-);
+app.get('/auth/google/register', (req, res, next) => {
+  const redirect = req.query.redirect || '';
+  passport.authenticate('google-register', {
+    scope: ['profile', 'email'],
+    state: redirect,
+  })(req, res, next);
+});
+
 app.get(
   '/auth/google/register/callback',
   passport.authenticate('google-register', {
@@ -99,7 +108,7 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
 
-// ── 404 catch-all (must come before error handler) ──
+// ── 404 catch-all ───────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Not found: ${req.method} ${req.originalUrl}` });
 });
