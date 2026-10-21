@@ -1,5 +1,5 @@
 // controllers/settingsController.js
-import Setting from '../models/Settings.js';
+import Setting from '../models/Setting.js';
 
 /**
  * Shape of the stored setting:
